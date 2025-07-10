@@ -1,63 +1,72 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '../services/supabase';
+import { USER_ID } from '../config/constants';
 
-export const useRealtime = (table, filter = {}) => {
+export const useRealtime = (tableName) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 초기 데이터 로딩
   useEffect(() => {
-    loadData();
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const { data: result, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq('user_id', USER_ID);
 
-    // Supabase 실시간 구독
-    const subscription = supabase
-      .channel(`${table}_changes`)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table },
-        handleRealTimeUpdate
+        if (error) throw error;
+        setData(result || []);
+      } catch (error) {
+        console.error(`${tableName} 데이터 로딩 중 오류:`, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [tableName]);
+
+  // 실시간 업데이트 처리
+  useEffect(() => {
+    const channel = supabase
+      .channel(`public:${tableName}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: tableName
+        },
+        (payload) => {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+
+          switch (eventType) {
+            case 'INSERT':
+              setData(prev => [...prev, newRecord]);
+              break;
+            case 'UPDATE':
+              setData(prev =>
+                prev.map(item => item.id === newRecord.id ? newRecord : item)
+              );
+              break;
+            case 'DELETE':
+              setData(prev =>
+                prev.filter(item => item.id !== oldRecord.id)
+              );
+              break;
+            default:
+              break;
+          }
+        }
       )
       .subscribe();
 
-    // MCP 메시지 리스너 (옵션)
-    const mcpHandler = (e) => {
-      // e.detail에 동기화 데이터가 담겨있다고 가정
-      if (e.detail && e.detail.table === table) {
-        loadData(); // MCP에서 변경 알림 오면 데이터 새로고침
-      }
-    };
-    window.addEventListener('mcp-message', mcpHandler);
-
     return () => {
-      subscription.unsubscribe();
-      window.removeEventListener('mcp-message', mcpHandler);
+      supabase.removeChannel(channel);
     };
-  }, [table]);
+  }, [tableName]);
 
-  const loadData = async () => {
-    const { data, error } = await supabase
-      .from(table)
-      .select('*')
-      .eq('user_id', filter.user_id);
-    if (!error) setData(data);
-    setLoading(false);
-  };
-
-  const handleRealTimeUpdate = (payload) => {
-    switch (payload.eventType) {
-      case 'INSERT':
-        setData(prev => [...prev, payload.new]);
-        break;
-      case 'UPDATE':
-        setData(prev => prev.map(item =>
-          item.id === payload.new.id ? payload.new : item
-        ));
-        break;
-      case 'DELETE':
-        setData(prev => prev.filter(item =>
-          item.id !== payload.old.id
-        ));
-        break;
-    }
-  };
-
-  return { data, loading, refetch: loadData };
+  return { data, loading };
 }; 

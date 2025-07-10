@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSupabase } from '../../hooks/useSupabase';
-
-const userId = '샘플-유저-아이디'; // 실제 로그인 연동 시 교체 필요
+import { USER_ID } from '../../config/constants';
 
 const DailyTodosPanel = () => {
   const { create, read, remove } = useSupabase('daily_todos');
@@ -13,7 +12,7 @@ const DailyTodosPanel = () => {
   const fetchTodos = async () => {
     setLoading(true);
     try {
-      const data = await read({ user_id: userId });
+      const data = await read({ user_id: USER_ID });
       setTodos(data);
     } catch (e) {
       alert('할 일 불러오기 실패: ' + e.message);
@@ -29,7 +28,7 @@ const DailyTodosPanel = () => {
   const handleAdd = async () => {
     if (!newTodo.trim()) return;
     try {
-      await create({ user_id: userId, text: newTodo, is_active: true });
+      await create({ user_id: USER_ID, text: newTodo, is_active: true });
       setNewTodo('');
       fetchTodos();
     } catch (e) {
@@ -48,8 +47,8 @@ const DailyTodosPanel = () => {
   };
 
   return (
-    <div className="p-4 bg-white rounded-xl shadow max-w-md mx-auto mt-8">
-      <h2 className="text-xl font-bold mb-4">Daily Todos (Supabase 연동)</h2>
+    <div className="p-0">
+      <h3 className="text-lg font-semibold mb-4">일일 할 일 관리</h3>
       <div className="flex gap-2 mb-4">
         <input
           className="flex-1 border rounded px-2 py-1"

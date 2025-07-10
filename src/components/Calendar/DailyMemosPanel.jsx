@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSupabase } from '../../hooks/useSupabase';
-
-const userId = '샘플-유저-아이디'; // 실제 로그인 연동 시 교체 필요
+import { USER_ID } from '../../config/constants';
 
 const DailyMemosPanel = () => {
   const { create, read, update, remove } = useSupabase('daily_memos');
@@ -14,7 +13,7 @@ const DailyMemosPanel = () => {
   const fetchMemos = async () => {
     setLoading(true);
     try {
-      const data = await read({ user_id: userId });
+      const data = await read({ user_id: USER_ID });
       setMemos(data);
     } catch (e) {
       alert('메모 불러오기 실패: ' + e.message);
@@ -29,7 +28,7 @@ const DailyMemosPanel = () => {
   const handleAdd = async () => {
     if (!memoDate || !content.trim()) return;
     try {
-      await create({ user_id: userId, memo_date: memoDate, content });
+      await create({ user_id: USER_ID, memo_date: memoDate, content });
       setMemoDate('');
       setContent('');
       fetchMemos();

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSupabase } from '../../hooks/useSupabase';
-
-const userId = '샘플-유저-아이디';
+import { USER_ID } from '../../config/constants';
 
 const CompletionsPanel = () => {
   const { create, read, remove } = useSupabase('completions');
@@ -14,7 +13,7 @@ const CompletionsPanel = () => {
   const fetchCompletions = async () => {
     setLoading(true);
     try {
-      const data = await read({ user_id: userId });
+      const data = await read({ user_id: USER_ID });
       setCompletions(data);
     } catch (e) {
       alert('완료 기록 불러오기 실패: ' + e.message);
@@ -29,7 +28,7 @@ const CompletionsPanel = () => {
   const handleAdd = async () => {
     if (!itemId.trim() || !completionDate) return;
     try {
-      await create({ user_id: userId, item_id: itemId, item_type: itemType, completion_date: completionDate });
+      await create({ user_id: USER_ID, item_id: itemId, item_type: itemType, completion_date: completionDate });
       setItemId('');
       setCompletionDate('');
       fetchCompletions();

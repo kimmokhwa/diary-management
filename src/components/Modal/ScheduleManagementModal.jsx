@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { X, Calendar, Trash2, Edit3 } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { USER_ID } from '../../config/constants';
 
-const ScheduleManagementModal = ({ isOpen, onClose }) => {
+const ScheduleManagementModal = (props) => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -35,10 +35,10 @@ const ScheduleManagementModal = ({ isOpen, onClose }) => {
 
   // 모달이 열릴 때 스케줄 목록 불러오기
   useEffect(() => {
-    if (isOpen) {
+    if (props.isOpen) {
       fetchSchedules();
     }
-  }, [isOpen]);
+  }, [props.isOpen]);
 
   // 스케줄 삭제
   const deleteSchedule = async (id) => {
@@ -121,7 +121,7 @@ const ScheduleManagementModal = ({ isOpen, onClose }) => {
     });
   };
 
-  if (!isOpen) return null;
+  if (!props.isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -133,7 +133,7 @@ const ScheduleManagementModal = ({ isOpen, onClose }) => {
             <h2 className="text-xl font-bold">📅 특정일 스케줄 관리</h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={props.onClose}
             className="hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all"
           >
             <X size={20} />
@@ -229,7 +229,7 @@ const ScheduleManagementModal = ({ isOpen, onClose }) => {
           <div className="flex justify-between items-center text-sm text-gray-600">
             <span>총 {schedules.length}개의 스케줄</span>
             <button
-              onClick={onClose}
+              onClick={props.onClose}
               className="cute-button-secondary"
             >
               닫기
@@ -241,4 +241,4 @@ const ScheduleManagementModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default ScheduleManagementModal; 
+export default memo(ScheduleManagementModal); 

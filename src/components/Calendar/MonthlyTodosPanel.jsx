@@ -45,6 +45,13 @@ const MonthlyTodosPanel = () => {
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
   return (
     <div className="p-0">
       <h3 className="text-lg font-semibold mb-4">월간 반복 할 일 관리</h3>
@@ -53,6 +60,7 @@ const MonthlyTodosPanel = () => {
           className="flex-1 border rounded px-2 py-1"
           value={newTodo}
           onChange={e => setNewTodo(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="월간 반복 할 일 입력"
         />
         <select

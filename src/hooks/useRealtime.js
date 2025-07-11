@@ -6,27 +6,27 @@ export const useRealtime = (tableName) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 데이터 로딩 함수 분리
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data: result, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('user_id', USER_ID);
+      if (error) throw error;
+      setData(result || []);
+    } catch (error) {
+      console.error(`${tableName} 데이터 로딩 중 오류:`, error);
+    } finally {
+      setLoading(false);
+    }
+  }, [tableName]);
+
   // 초기 데이터 로딩
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const { data: result, error } = await supabase
-          .from(tableName)
-          .select('*')
-          .eq('user_id', USER_ID);
-
-        if (error) throw error;
-        setData(result || []);
-      } catch (error) {
-        console.error(`${tableName} 데이터 로딩 중 오류:`, error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
-  }, [tableName]);
+  }, [loadData]);
 
   // 실시간 업데이트 처리
   useEffect(() => {
@@ -68,5 +68,5 @@ export const useRealtime = (tableName) => {
     };
   }, [tableName]);
 
-  return { data, loading };
+  return { data, loading, refetch: loadData };
 }; 

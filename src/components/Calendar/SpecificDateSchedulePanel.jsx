@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { supabase } from '../../services/supabase';
 import { USER_ID } from '../../config/constants';
 import ScheduleManagementModal from '../Modal/ScheduleManagementModal';
+import { useRealtime } from '../../hooks/useRealtime';
 
 const SpecificDateSchedulePanel = () => {
   const [scheduleText, setScheduleText] = useState('');
   const [scheduleDate, setScheduleDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
+
+  // 실시간 스케줄 목록
+  const { data: schedules, loading: schedulesLoading } = useRealtime('specific_schedules');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,66 +67,11 @@ const SpecificDateSchedulePanel = () => {
   // 오늘 날짜를 기본값으로 설정 (시간대 문제 해결)
   const today = formatDate(new Date());
 
-  return (
-    <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            📅 날짜 선택
-          </label>
-          <input
-            type="date"
-            value={scheduleDate}
-            onChange={(e) => setScheduleDate(e.target.value)}
-            min={today}
-            className="cute-input"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            📝 스케줄 내용
-          </label>
-          <input
-            type="text"
-            value={scheduleText}
-            onChange={(e) => setScheduleText(e.target.value)}
-            placeholder="예: 병원 방문, 회의 참석, 친구 만나기..."
-            className="cute-input"
-            maxLength={100}
-            required
-          />
-        </div>
-        
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`cute-button-primary w-full ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {isLoading ? '📅 추가 중...' : '🎯 특정일 스케줄 추가'}
-        </button>
-      </form>
+  // ScheduleManagementModal을 memo로 감싸기
+  const MemoizedScheduleManagementModal = memo(ScheduleManagementModal);
 
-      {/* 스케줄 관리 버튼 */}
-      <div className="pt-4 border-t border-gray-200">
-        <button
-          onClick={() => setIsManagementModalOpen(true)}
-          className="cute-button-secondary w-full"
-        >
-          📋 기존 스케줄 관리 (수정/삭제)
-        </button>
-      </div>
-
-      {/* 스케줄 관리 모달 */}
-      <ScheduleManagementModal
-        isOpen={isManagementModalOpen}
-        onClose={() => setIsManagementModalOpen(false)}
-      />
-    </div>
-  );
+  // 더 이상 기능 없음. 빈 div만 렌더링
+  return <div />;
 };
 
 export default SpecificDateSchedulePanel; 

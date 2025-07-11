@@ -216,8 +216,9 @@ body {
 }
 
 .calendar-day .schedule-item.deadline {
-  @apply bg-red-100 text-red-800;
-  border-left: 3px solid #ef4444;
+  color: #ef4444;
+  background: none;
+  border: none;
 }
 
 .calendar-day .more-items {
@@ -251,6 +252,24 @@ body {
   box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
 }
 
+.calendar-day .todo-count {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  z-index: 2;
+}
+.calendar-day .todo-count .incomplete {
+  color: #ef4444; /* 빨간색 */
+}
+.calendar-day .todo-count .total {
+  color: #4ade80; /* 연두색 */
+  margin-left: 2px;
+}
 
 
 /* 애니메이션 효과 */

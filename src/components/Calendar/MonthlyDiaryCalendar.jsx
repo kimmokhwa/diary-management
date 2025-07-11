@@ -7,8 +7,8 @@ import DailyTodosPanel from './DailyTodosPanel';
 import MonthlyTodosPanel from './MonthlyTodosPanel';
 import DeadlineTasksPanel from './DeadlineTasksPanel';
 import DailyMemosPanel from './DailyMemosPanel';
-import SpecificDateSchedulePanel from './SpecificDateSchedulePanel';
 import ScheduleManagementModal from '../Modal/ScheduleManagementModal';
+import SpecialSchedulePanel from './SpecialSchedulePanel';
 
 const MonthlyDiaryCalendar = () => {
   const today = new Date();
@@ -36,6 +36,7 @@ const MonthlyDiaryCalendar = () => {
   const { data: deadlineTasks } = useRealtime('deadline_tasks');
   const { data: completions } = useRealtime('completions');
   const { data: specificSchedules } = useRealtime('specific_schedules');
+  const { data: specialSchedules, refetch: refetchSpecialSchedules } = useRealtime('special_schedules');
   const [localCompletions, setLocalCompletions] = useState([]);
 
   // completions 데이터가 변경될 때 로컬 상태 업데이트
@@ -224,24 +225,16 @@ const MonthlyDiaryCalendar = () => {
         });
       });
     
-    // 마감일 업무 (완료되지 않은 모든 마감업무를 표시)
+    // 마감일 업무 (완료 여부와 관계없이 마감일까지 모두 표시)
     deadlineTasks
       .filter(task => {
-        // 해당 날짜에 완료되지 않은 마감업무만 표시
-        const isCompletedToday = localCompletions.some(completion => 
-          completion.item_id === task.id && 
-          completion.item_type === 'deadline_task' &&
-          completion.completion_date === dateStr
-        );
-        
-        // 완료되지 않은 업무만 표시
-        return !isCompletedToday;
+        // 마감일 이전(포함) 날짜에만 표시
+        return dateStr <= task.deadline_date;
       })
       .forEach(task => {
         const taskDeadline = new Date(task.deadline_date);
         const today = new Date(dateStr);
         const isOverdue = taskDeadline < today;
-        
         dayTodos.push({
           ...task,
           type: 'deadline_task',
@@ -266,54 +259,60 @@ const MonthlyDiaryCalendar = () => {
     return dayTodos;
   };
 
+  // getDayInfo 함수에서 todos 배열 생성 시 각 타입별로 필요한 필드 포함
   const getDayInfo = (day) => {
     const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
-    
     // 해당 날짜의 모든 할일 수집
     const todos = [];
-    
     // 일일 업무 추가
     dailyTodos.forEach(todo => todos.push({ id: todo.id, type: 'daily_todo' }));
-    
     // 월간 업무 추가 (해당 날짜만)
     monthlyTodos
       .filter(todo => todo.repeat_date === day)
       .forEach(todo => todos.push({ id: todo.id, type: 'monthly_todo' }));
-    
-    // 마감일 업무 추가 (완료되지 않은 모든 마감업무)
+    // 마감일 업무 추가 (완료 여부와 관계없이 마감일까지 모두 표시)
     deadlineTasks
-      .filter(task => {
-        // 해당 날짜에 완료되지 않은 마감업무만 표시
-        const isCompletedToday = localCompletions.some(completion => 
-          completion.item_id === task.id && 
-          completion.item_type === 'deadline_task' &&
-          completion.completion_date === dateStr
-        );
-        
-        return !isCompletedToday;
-      })
-      .forEach(task => todos.push({ id: task.id, type: 'deadline_task' }));
-
+      .filter(task => dateStr <= task.deadline_date)
+      .forEach(task => todos.push({ id: task.id, type: 'deadline_task', deadline_date: task.deadline_date }));
     // 특정일 스케줄 추가 (해당 날짜만)
     if (specificSchedules) {
       specificSchedules
         .filter(schedule => schedule.schedule_date === dateStr)
         .forEach(schedule => todos.push({ id: schedule.id, type: 'specific_schedule' }));
     }
-    
-    // 완료된 할일 수 계산 (해당 날짜 기준)
-    const completedCount = todos.filter(todo => 
-      localCompletions.some(completion => 
-        completion.item_id === todo.id && 
-        completion.item_type === todo.type &&
-        completion.completion_date === dateStr
-      )
+    // 미완료 할일 수 계산 (해당 날짜 기준)
+    const incompleteCount = todos.filter(todo =>
+      !isCompleted(todo.id, todo.type, todo.deadline_date, dateStr)
     ).length;
-    
     return {
       totalCount: todos.length,
-      completedCount
+      incompleteCount
     };
+  };
+
+  // isCompleted 함수에서 타입별로 올바른 판정 로직 적용
+  const isCompleted = (itemId, itemType, deadlineDate, dateStr) => {
+    if (!itemId || !itemType || !Array.isArray(localCompletions)) {
+      return false;
+    }
+    if (!dateStr) return false;
+    if (itemType === 'deadline_task') {
+      // 마감업무: completions에서 최초 완료일 구함
+      const completionsForTask = localCompletions
+        .filter(c => c.item_id === itemId && c.item_type === 'deadline_task')
+        .map(c => c.completion_date)
+        .sort();
+      if (completionsForTask.length === 0 || !deadlineDate) return false;
+      const firstCompleted = completionsForTask[0];
+      // 최초 완료일 <= 기준날짜 <= 마감일
+      return (firstCompleted <= dateStr && dateStr <= deadlineDate);
+    }
+    // 일일/월간/스케줄 등: 해당 날짜에 완료 기록이 있으면 완료
+    return localCompletions.some(completion =>
+      completion.item_id === itemId &&
+      completion.item_type === itemType &&
+      completion.completion_date === dateStr
+    );
   };
 
   // 탭별 필터링된 데이터 가져오기
@@ -337,28 +336,11 @@ const MonthlyDiaryCalendar = () => {
         });
         
         return { type: 'deadline', data: incompleteDeadlineTasks, icon: AlertCircle, color: 'bg-red-500' };
-      case 'schedule':
-        return { type: 'schedule', data: specificSchedules || [], icon: Clock, color: 'bg-indigo-500' };
+      case 'special':
+        return { type: 'special', data: specialSchedules, icon: Circle, color: 'bg-purple-500' };
       default:
         return { type: 'daily', data: dailyTodos, icon: Calendar, color: 'bg-gray-500' };
     }
-  };
-
-  // 완료 여부 확인 (선택된 날짜 기준)
-  const isCompleted = (itemId, itemType) => {
-    if (!itemId || !itemType || !Array.isArray(localCompletions)) {
-      return false;
-    }
-
-    const selectedDateStr = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
-    
-    const result = localCompletions.some(completion => 
-      completion.item_id === itemId && 
-      completion.item_type === itemType &&
-      completion.completion_date === selectedDateStr
-    );
-    
-    return result;
   };
 
   // 할일 완료 상태 토글 (조용한 방식)
@@ -461,7 +443,7 @@ const MonthlyDiaryCalendar = () => {
             return null;
           }
 
-          const isComplete = isCompleted(todo.id, todo.type);
+          const isComplete = isCompleted(todo.id, todo.type, todo.deadline_date, selectedDate ? selectedDate.toISOString().split('T')[0] : null);
           
           return (
             <div 
@@ -564,7 +546,7 @@ const MonthlyDiaryCalendar = () => {
       const dayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       
-      // 해당 날짜의 특정일 스케줄과 마감업무 가져오기
+      // 해당 날짜의 특정일 스케줄, 마감업무, 특정업무 가져오기
       const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
       const daySchedules = specificSchedules?.filter(schedule => schedule.schedule_date === dateStr) || [];
       const dayDeadlines = deadlineTasks?.filter(task => {
@@ -572,12 +554,13 @@ const MonthlyDiaryCalendar = () => {
         const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
         return taskDeadline.toDateString() === cellDate.toDateString();
       }) || [];
+      const daySpecials = specialSchedules?.filter(s => s.schedule_date === dateStr) || [];
 
       days.push(
         <div
           key={day}
           onClick={() => selectDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
-          className={`calendar-day min-h-[96px] cursor-pointer p-1 ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+          className={`calendar-day min-h-[96px] cursor-pointer p-1 ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${dayOfWeek === 0 ? 'bg-[#FFE4EC]' : ''} ${dayOfWeek === 6 ? 'bg-[#E3F2FD]' : ''}`}
         >
           <div className={`date text-sm font-medium ${dayOfWeek === 0 ? 'sunday' : ''} ${dayOfWeek === 6 ? 'saturday' : ''}`}>
             {day}
@@ -599,41 +582,32 @@ const MonthlyDiaryCalendar = () => {
             </div>
           )}
           
+          {/* 특정업무 표시 */}
+          {daySpecials.length > 0 && (
+            <div className="space-y-1">
+              {daySpecials.slice(0, 5).map((special, index) => (
+                <div key={special.id} className="schedule-item special">
+                  💗 {special.text}
+                </div>
+              ))}
+            </div>
+          )}
           {/* 마감업무 표시 */}
           {dayDeadlines.length > 0 && (
             <div className="space-y-1">
-              {dayDeadlines.slice(0, 2).map((deadline, index) => (
+              {dayDeadlines.slice(0, 5).map((deadline, index) => (
                 <div key={deadline.id} className="schedule-item deadline">
                   ⚠️ {deadline.text}
                 </div>
               ))}
-              {dayDeadlines.length > 2 && (
-                <div className="more-items deadline">
-                  +{dayDeadlines.length - 2}개 더
-                </div>
-              )}
             </div>
           )}
           
           {/* 할일 상태 표시 (기존 기능 유지) */}
-          {Boolean(dayInfo.totalCount > 0) && (
-            <div className="absolute bottom-1 right-1">
-              {dayInfo.completedCount === dayInfo.totalCount ? (
-                <div className="todo-status flex items-center gap-1">
-                  <span>✨</span>
-                  <span className="text-xs">{dayInfo.completedCount}/{dayInfo.totalCount}</span>
-                </div>
-              ) : dayInfo.completedCount > 0 ? (
-                <div className="todo-status partial flex items-center gap-1">
-                  <span>🌟</span>
-                  <span className="text-xs">{dayInfo.completedCount}/{dayInfo.totalCount}</span>
-                </div>
-              ) : (
-                <div className="todo-status none flex items-center gap-1">
-                  <span>📝</span>
-                  <span className="text-xs">{dayInfo.totalCount}</span>
-                </div>
-              )}
+          {dayInfo.totalCount > 0 && (
+            <div className="todo-count">
+              <span className="incomplete">{dayInfo.incompleteCount}</span>
+              <span className="total">/ {dayInfo.totalCount}</span>
             </div>
           )}
         </div>
@@ -853,22 +827,23 @@ const MonthlyDiaryCalendar = () => {
             <span className="mr-2">🧡</span>
             마감 업무
           </button>
-          
+
           <button
-            onClick={() => setActiveTab('schedule')}
+            onClick={() => setActiveTab('special')}
             className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
-              activeTab === 'schedule' 
+              activeTab === 'special' 
                 ? isMobile 
                   ? 'mobile-tab active' 
-                  : 'bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-lg'
+                  : 'bg-gradient-to-r from-pink-400 to-purple-400 text-white shadow-lg'
                 : isMobile 
                   ? 'mobile-tab' 
                   : 'cute-button-secondary'
             }`}
           >
-            <span className="mr-2">🎯</span>
-            특정일 스케줄
+            <span className="mr-2">💗</span>
+            특정업무
           </button>
+          
         </div>
 
         {/* 컴포넌트 렌더링 - 모바일 최적화 */}
@@ -879,11 +854,13 @@ const MonthlyDiaryCalendar = () => {
               <span className="text-2xl">
                 {activeTab === 'daily' ? '💛' : 
                  activeTab === 'monthly' ? '💚' : 
-                 activeTab === 'schedule' ? '🎯' : '🧡'}
+                 activeTab === 'deadline' ? '🧡' : 
+                 activeTab === 'special' ? '💗' : ''}
               </span>
               새로운 {activeTab === 'daily' ? '매일' : 
                      activeTab === 'monthly' ? '월간' : 
-                     activeTab === 'schedule' ? '특정일 스케줄' : '마감'} 업무
+                     activeTab === 'deadline' ? '마감' : 
+                     activeTab === 'special' ? '특정' : ''} 업무
             </h3>
             
             {activeTab === 'daily' && <DailyTodosPanel />}
@@ -891,8 +868,9 @@ const MonthlyDiaryCalendar = () => {
             {activeTab === 'monthly' && <MonthlyTodosPanel />}
             
             {activeTab === 'deadline' && <DeadlineTasksPanel />}
+
+            {activeTab === 'special' && <SpecialSchedulePanel onChange={refetchSpecialSchedules} />}
             
-            {activeTab === 'schedule' && <SpecificDateSchedulePanel />}
           </div>
 
           {/* 기존 항목 목록 */}
@@ -914,7 +892,8 @@ const MonthlyDiaryCalendar = () => {
                         <span className="text-sm">
                           {activeTab === 'daily' ? '💛' : 
                            activeTab === 'monthly' ? '💚' : 
-                           activeTab === 'schedule' ? '🎯' : '🧡'}
+                           activeTab === 'deadline' ? '🧡' : 
+                           activeTab === 'special' ? '💗' : ''}
                         </span>
                         <span className={`font-medium text-gray-800 ${isMobile ? 'text-sm-mobile' : 'text-sm'}`}>
                           {item.text}
@@ -931,9 +910,9 @@ const MonthlyDiaryCalendar = () => {
                             {item.deadline_date}
                           </span>
                         )}
-                        {activeTab === 'schedule' && (
-                          <span className={`bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full ${isMobile ? 'text-xs-mobile' : 'text-xs'}`}>
-                            {item.schedule_date}
+                        {activeTab === 'special' && (
+                          <span className={`bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full ${isMobile ? 'text-xs-mobile' : 'text-xs'}`}>
+                            특정일 {item.schedule_date}
                           </span>
                         )}
                       </div>
@@ -990,12 +969,6 @@ const MonthlyDiaryCalendar = () => {
                   >
                     {showPanel ? '📝 패널 닫기' : '📝 할일 관리'}
                   </button>
-                  <button
-                    onClick={() => setShowScheduleModal(true)}
-                    className="cute-button-secondary"
-                  >
-                    🎯 스케줄 관리
-                  </button>
                 </>
               )}
             </div>
@@ -1017,7 +990,7 @@ const MonthlyDiaryCalendar = () => {
                 onClick={() => navigateMonth(-1)}
                 className={`cute-button-secondary ${isMobile ? 'w-touch h-touch' : 'w-10 h-10'} rounded-full flex items-center justify-center`}
               >
-                🌸
+                {'<'}
               </button>
               <h2 className={`${isMobile ? 'text-base-mobile' : 'text-xl'} font-bold text-gray-800`}>
                 {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월 💕
@@ -1026,7 +999,7 @@ const MonthlyDiaryCalendar = () => {
                 onClick={() => navigateMonth(1)}
                 className={`cute-button-secondary ${isMobile ? 'w-touch h-touch' : 'w-10 h-10'} rounded-full flex items-center justify-center`}
               >
-                🌺
+                {'>'}
               </button>
             </div>
 

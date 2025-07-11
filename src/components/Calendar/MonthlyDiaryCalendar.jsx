@@ -199,10 +199,19 @@ const MonthlyDiaryCalendar = () => {
   };
 
   // 선택된 날짜의 할일 데이터 가져오기
+<<<<<<< HEAD
   const getSelectedDateTodos = (dateObj) => {
     if (!dateObj) return [];
     const dateStr = formatDate(dateObj);
     const dayTodos = [];
+=======
+  const getSelectedDateTodos = () => {
+    if (!selectedDate) return [];
+    
+    const dateStr = formatDate(selectedDate);
+    const dayTodos = [];
+    
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
     // 일일 업무 (모든 날짜에 적용)
     dailyTodos.forEach(todo => {
       dayTodos.push({
@@ -211,9 +220,16 @@ const MonthlyDiaryCalendar = () => {
         category: '매일'
       });
     });
+<<<<<<< HEAD
     // 월간 업무 (해당 날짜만)
     monthlyTodos
       .filter(todo => todo.repeat_date === dateObj.getDate())
+=======
+    
+    // 월간 업무 (해당 날짜만)
+    monthlyTodos
+      .filter(todo => todo.repeat_date === selectedDate.getDate())
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
       .forEach(todo => {
         dayTodos.push({
           ...todo,
@@ -221,6 +237,7 @@ const MonthlyDiaryCalendar = () => {
           category: '월간 업무'
         });
       });
+<<<<<<< HEAD
     // 마감일 업무 (입력날짜~마감날짜 범위에만, 문자열 비교)
     deadlineTasks
       .filter(task => {
@@ -229,13 +246,33 @@ const MonthlyDiaryCalendar = () => {
         return createdStr <= dateStr && dateStr <= deadlineStr;
       })
       .forEach(task => {
+=======
+    
+    // 마감일 업무 (완료 여부와 관계없이 마감일까지 모두 표시)
+    deadlineTasks
+      .filter(task => {
+        // 마감일 이전(포함) 날짜에만 표시
+        return dateStr <= task.deadline_date;
+      })
+      .forEach(task => {
+        const taskDeadline = new Date(task.deadline_date);
+        const today = new Date(dateStr);
+        const isOverdue = taskDeadline < today;
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
         dayTodos.push({
           ...task,
           type: 'deadline_task',
           category: '마감일 업무',
+<<<<<<< HEAD
           isOverdue: false
         });
       });
+=======
+          isOverdue: isOverdue // 마감일이 지났는지 표시
+        });
+      });
+
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
     // 특정일 스케줄 (해당 날짜만)
     if (specificSchedules) {
       specificSchedules
@@ -248,6 +285,10 @@ const MonthlyDiaryCalendar = () => {
           });
         });
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
     return dayTodos;
   };
 
@@ -282,7 +323,11 @@ const MonthlyDiaryCalendar = () => {
     };
   };
 
+<<<<<<< HEAD
   // isCompleted 함수에서 타입별로 올바른 판정 로직 적용 (문자열 비교)
+=======
+  // isCompleted 함수에서 타입별로 올바른 판정 로직 적용
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
   const isCompleted = (itemId, itemType, deadlineDate, dateStr) => {
     if (!itemId || !itemType || !Array.isArray(localCompletions)) {
       return false;
@@ -296,9 +341,14 @@ const MonthlyDiaryCalendar = () => {
         .sort();
       if (completionsForTask.length === 0 || !deadlineDate) return false;
       const firstCompleted = completionsForTask[0];
+<<<<<<< HEAD
       const deadlineStr = formatDate(new Date(deadlineDate));
       // 최초 완료일 <= 기준날짜 <= 마감일 (모두 문자열 비교)
       return (firstCompleted <= dateStr && dateStr <= deadlineStr);
+=======
+      // 최초 완료일 <= 기준날짜 <= 마감일
+      return (firstCompleted <= dateStr && dateStr <= deadlineDate);
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
     }
     // 일일/월간/스케줄 등: 해당 날짜에 완료 기록이 있으면 완료
     return localCompletions.some(completion =>
@@ -416,7 +466,11 @@ const MonthlyDiaryCalendar = () => {
 
   // 할일 목록 렌더링
   const renderTodoList = () => {
+<<<<<<< HEAD
     const selectedDateTodos = getSelectedDateTodos(selectedDate);
+=======
+    const selectedDateTodos = getSelectedDateTodos();
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
     
     if (!Array.isArray(selectedDateTodos) || selectedDateTodos.length === 0) {
       return (
@@ -531,6 +585,7 @@ const MonthlyDiaryCalendar = () => {
 
     // 현재 달의 날짜들
     for (let day = 1; day <= daysInMonth; day++) {
+<<<<<<< HEAD
       const cellDateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const todosForCell = getSelectedDateTodos(cellDateObj);
       const incompleteCount = todosForCell.filter(todo =>
@@ -545,6 +600,9 @@ const MonthlyDiaryCalendar = () => {
         '미완료:', incompleteCount,
         '할일:', todosForCell.map(t => t.text)
       );
+=======
+      const dayInfo = getDayInfo(day);
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
       const isToday = new Date().toDateString() === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
       const isSelected = selectedDate && selectedDate.getDate() === day && 
                         selectedDate.getMonth() === currentDate.getMonth() && 
@@ -562,6 +620,7 @@ const MonthlyDiaryCalendar = () => {
       }) || [];
       const daySpecials = specialSchedules?.filter(s => s.schedule_date === dateStr) || [];
 
+<<<<<<< HEAD
       // 배경색과 테두리 설정
       let backgroundColor = '#ffffff'; // 기본 흰색
       let borderColor = '#e5e7eb'; // 기본 회색 테두리
@@ -574,16 +633,22 @@ const MonthlyDiaryCalendar = () => {
         backgroundColor = '#e0f2fe'; // 하늘색 (bg-sky-100)
       }
 
+=======
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
       days.push(
         <div
           key={day}
           onClick={() => selectDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
+<<<<<<< HEAD
           className={`calendar-day min-h-[96px] cursor-pointer p-1 ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
           style={{ 
             backgroundColor, 
             border: `2px solid ${borderColor}`,
             borderRadius: '8px'
           }}
+=======
+          className={`calendar-day min-h-[96px] cursor-pointer p-1 ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${dayOfWeek === 0 ? 'bg-[#FFE4EC]' : ''} ${dayOfWeek === 6 ? 'bg-[#E3F2FD]' : ''}`}
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
         >
           <div className={`date text-sm font-medium ${dayOfWeek === 0 ? 'sunday' : ''} ${dayOfWeek === 6 ? 'saturday' : ''}`}>
             {day}
@@ -625,7 +690,18 @@ const MonthlyDiaryCalendar = () => {
               ))}
             </div>
           )}
+<<<<<<< HEAD
           {/* 셀 하단 숫자 표시 제거 */}
+=======
+          
+          {/* 할일 상태 표시 (기존 기능 유지) */}
+          {dayInfo.totalCount > 0 && (
+            <div className="todo-count">
+              <span className="incomplete">{dayInfo.incompleteCount}</span>
+              <span className="total">/ {dayInfo.totalCount}</span>
+            </div>
+          )}
+>>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
         </div>
       );
     }

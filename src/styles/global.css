@@ -105,27 +105,65 @@ body {
   border-color: #f472b6;
 }
 
-/* 달력 스타일 */
+/* 달력 스타일 - 모바일 최적화 */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 4px;
   background: linear-gradient(135deg, #fef7f7 0%, #f0fdf4 100%);
   border: 2px solid #fecaca;
-  border-radius: 1.5rem;
-  padding: 1rem;
+  border-radius: 1rem;
+  padding: 0.5rem;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 모바일에서 달력 그리드 최적화 */
+@media (min-width: 375px) {
+  .calendar-grid {
+    gap: 6px;
+    padding: 0.75rem;
+    border-radius: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .calendar-grid {
+    gap: 8px;
+    padding: 1rem;
+    border-radius: 1.5rem;
+  }
 }
 
 .calendar-day {
   aspect-ratio: 1;
   background: rgba(255, 255, 255, 0.9);
-  padding: 0.75rem;
+  padding: 0.25rem;
   position: relative;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   border: 2px solid transparent;
   transition: all 0.3s ease;
   cursor: pointer;
+  min-height: 96px; /* 높이 증가 - 텍스트 표시 공간 확보 */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+/* 모바일에서 달력 날짜 셀 최적화 */
+@media (min-width: 375px) {
+  .calendar-day {
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .calendar-day {
+    padding: 0.75rem;
+    border-radius: 1rem;
+  }
 }
 
 .calendar-day:hover {
@@ -150,6 +188,8 @@ body {
 .calendar-day .date {
   font-weight: 600;
   font-size: 1rem;
+  text-align: center;
+  margin-bottom: 0.25rem;
 }
 
 .calendar-day.sunday .date {
@@ -158,6 +198,38 @@ body {
 
 .calendar-day.saturday .date {
   color: #3b82f6;
+}
+
+/* 달력 셀 내부 스케줄과 마감업무 텍스트 스타일 */
+.calendar-day .schedule-item {
+  @apply text-xs px-1 py-0.5 rounded mb-1 truncate;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-day .schedule-item.specific {
+  @apply bg-indigo-100 text-indigo-800;
+  border-left: 3px solid #6366f1;
+}
+
+.calendar-day .schedule-item.deadline {
+  @apply bg-red-100 text-red-800;
+  border-left: 3px solid #ef4444;
+}
+
+.calendar-day .more-items {
+  @apply text-xs font-medium text-center py-1;
+}
+
+.calendar-day .more-items.schedule {
+  @apply text-indigo-600;
+}
+
+.calendar-day .more-items.deadline {
+  @apply text-red-600;
 }
 
 /* 할일 완료 상태 표시 */
@@ -178,6 +250,8 @@ body {
   color: #6b7280;
   box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
 }
+
+
 
 /* 애니메이션 효과 */
 .fade-enter {
@@ -255,4 +329,325 @@ body {
 
 .pulse-cute {
   animation: pulse 2s infinite;
+}
+
+/* =========================
+   모바일 최적화 스타일
+   ========================= */
+
+/* 모바일 터치 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .cute-button {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 16px; /* iOS 확대 방지 */
+  }
+  
+  .cute-input {
+    min-height: 44px;
+    font-size: 16px; /* iOS 확대 방지 */
+  }
+  
+  /* 터치 시 확대 효과 더 크게 */
+  .cute-button:active {
+    transform: scale(0.92);
+  }
+  
+  /* 호버 효과 제거 (터치 디바이스에서) */
+  .cute-card:hover {
+    transform: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 모바일 최적화 - 작은 화면 */
+@media (max-width: 374px) {
+  .calendar-grid {
+    gap: 2px;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+  }
+  
+  .calendar-day {
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    min-height: 80px;
+  }
+  
+  .calendar-day .date {
+    font-size: 0.875rem;
+    margin-bottom: 0.125rem;
+  }
+  
+  .calendar-day .schedule-item {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+    margin-bottom: 0.125rem;
+  }
+  
+  .calendar-day .more-items {
+    font-size: 0.625rem;
+    padding: 0.125rem;
+  }
+  
+  .mobile-panel {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+  
+  .mobile-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* 일반 모바일 화면 (375px-767px) */
+@media (min-width: 375px) and (max-width: 767px) {
+  /* 모바일에서 패널 스택 레이아웃 */
+  .mobile-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  /* 모바일 달력 컨테이너 */
+  .mobile-calendar-container {
+    padding: 0.75rem;
+    margin: 0 0.5rem;
+  }
+  
+  /* 모바일 탭 스타일 */
+  .mobile-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mobile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .mobile-tab {
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  
+  .mobile-tab.active {
+    background: linear-gradient(135deg, #fecaca 0%, #e9d5ff 100%);
+    border-color: #f472b6;
+    box-shadow: 0 4px 15px rgba(244, 114, 182, 0.3);
+  }
+  
+  /* 모바일 패널 스타일 */
+  .mobile-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 1.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid #fecaca;
+  }
+  
+  /* 모바일 할일 리스트 */
+  .mobile-todo-item {
+    padding: 0.75rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #fecaca;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-todo-item:active {
+    background: rgba(252, 202, 202, 0.3);
+    transform: scale(0.98);
+  }
+}
+
+/* 중간 크기 모바일 화면 최적화 */
+@media (min-width: 375px) and (max-width: 767px) {
+  .calendar-day {
+    min-height: 88px;
+  }
+  
+  .calendar-day .schedule-item {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .calendar-day .more-items {
+    font-size: 0.75rem;
+  }
+  
+  .mobile-stack {
+    gap: 1rem;
+  }
+  
+  .mobile-calendar-container {
+    padding: 1rem;
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-tabs {
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 0.75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  
+  .mobile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .mobile-tab {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  
+  .mobile-tab.active {
+    background: linear-gradient(135deg, #f472b6 0%, #a855f7 100%);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(244, 114, 182, 0.3);
+  }
+  
+  .mobile-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-todo-item {
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(244, 114, 182, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-todo-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-todo-item:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 태블릿 화면 (768px-1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .tablet-calendar {
+    min-height: 500px;
+  }
+  
+  .tablet-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+/* 큰 화면 (1024px+) */
+@media (min-width: 1024px) {
+  .desktop-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+/* 가로 방향 모바일 (landscape) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape-mobile {
+    display: grid;
+    grid-template-columns: 1fr 250px;
+    gap: 1rem;
+    height: 100vh;
+    padding: 0.5rem;
+  }
+  
+  .calendar-grid {
+    gap: 2px;
+    padding: 0.25rem;
+  }
+  
+  .calendar-day {
+    padding: 0.125rem;
+    font-size: 11px;
+  }
+}
+
+/* PWA 앱 스타일 */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .pwa-header {
+    padding-top: calc(env(safe-area-inset-top) + 1rem);
+  }
+}
+
+/* 다크모드 지원 (시스템 설정 기반) */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1e1e2e 0%, #2d2a55 50%, #1e293b 100%);
+  }
+  
+  .cute-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(252, 202, 202, 0.3);
+  }
+  
+  .calendar-day {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+  }
+}
+
+/* 접근성 개선 - 모션 감소 설정 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .cute-button {
+    transform: none !important;
+  }
 } 

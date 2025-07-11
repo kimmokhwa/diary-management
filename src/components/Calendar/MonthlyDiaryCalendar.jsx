@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar, AlertCircle, CheckCircle2, Circle, CalendarDays, Clock } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Calendar, AlertCircle, CheckCircle2, Circle, CalendarDays, Clock, Menu, X } from 'lucide-react';
 import { useRealtime } from '../../hooks/useRealtime';
 import { supabase } from '../../services/supabase';
 import { USER_ID } from '../../config/constants';
@@ -7,15 +7,27 @@ import DailyTodosPanel from './DailyTodosPanel';
 import MonthlyTodosPanel from './MonthlyTodosPanel';
 import DeadlineTasksPanel from './DeadlineTasksPanel';
 import DailyMemosPanel from './DailyMemosPanel';
+import SpecificDateSchedulePanel from './SpecificDateSchedulePanel';
+import ScheduleManagementModal from '../Modal/ScheduleManagementModal';
 
 const MonthlyDiaryCalendar = () => {
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
   const [showDayDetail, setShowDayDetail] = useState(true);
-  const [showPanel, setShowPanel] = useState(false);
+  const [showPanel, setShowPanel] = useState(false); // 모바일에서 기본적으로 닫힘
   const [activeTab, setActiveTab] = useState('daily');
   const [selectedDateMemo, setSelectedDateMemo] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(''); // 'saving', 'saved', 'error'
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  
+  // 모바일 최적화 상태
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileTabs, setShowMobileTabs] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const calendarRef = useRef(null);
 
   // 실시간 데이터 구독
   const { data: memos, loading } = useRealtime('daily_memos');
@@ -23,6 +35,7 @@ const MonthlyDiaryCalendar = () => {
   const { data: monthlyTodos } = useRealtime('monthly_todos');
   const { data: deadlineTasks } = useRealtime('deadline_tasks');
   const { data: completions } = useRealtime('completions');
+  const { data: specificSchedules } = useRealtime('specific_schedules');
   const [localCompletions, setLocalCompletions] = useState([]);
 
   // completions 데이터가 변경될 때 로컬 상태 업데이트
@@ -31,11 +44,122 @@ const MonthlyDiaryCalendar = () => {
       setLocalCompletions(completions);
     }
   }, [completions]);
-
-  // 날짜 포맷 함수
-  const formatDate = useCallback((date) => {
-    return date.toISOString().split('T')[0];
+  
+  // 모바일 감지 및 초기화
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+      // 데스크톱에서는 패널 기본 열림, 모바일에서는 닫힘
+      if (!isMobileDevice && !showPanel) {
+        setShowPanel(true);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+  
+  // 터치 제스처 핸들러
+  const minSwipeDistance = 50;
+  
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      navigateMonth(1); // 다음 달
+    }
+    if (isRightSwipe) {
+      navigateMonth(-1); // 이전 달
+    }
+  };
+
+  // 날짜 포맷 함수 - 시간대 문제 해결
+  const formatDate = useCallback((date) => {
+    // 로컬 시간대를 고려한 날짜 포맷 (YYYY-MM-DD)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  // 자동 저장 함수 (debounced)
+  const autoSaveMemo = useCallback(async (memo, date) => {
+    if (!date) return;
+
+    try {
+      setIsSaving(true);
+      setSaveStatus('saving');
+      
+      const dateStr = formatDate(date);
+      
+      const memoData = {
+        user_id: USER_ID,
+        memo_date: dateStr,
+        content: memo,
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('🔄 메모 자동 저장 중:', memoData);
+      
+      // UPSERT 방식으로 처리 (삽입 또는 업데이트)
+      const { data, error } = await supabase
+        .from('daily_memos')
+        .upsert(memoData, {
+          onConflict: 'user_id,memo_date'
+        })
+        .select();
+
+      if (error) throw error;
+      
+      console.log('✅ 메모 자동 저장 성공:', data);
+      setSaveStatus('saved');
+      
+      // 저장 완료 상태를 2초 후 자동으로 지움
+      setTimeout(() => {
+        setSaveStatus('');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('❌ 메모 자동 저장 중 오류:', error);
+      setSaveStatus('error');
+      
+      // 에러 상태를 3초 후 자동으로 지움
+      setTimeout(() => {
+        setSaveStatus('');
+      }, 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [formatDate]);
+
+  // Debounce 훅 구현
+  useEffect(() => {
+    if (!selectedDate) return;
+    
+    // 빈 문자열이 아닌 경우에만 자동 저장
+    if (selectedDateMemo.trim() === '') return;
+
+    // 2초 후에 자동 저장
+    const timeoutId = setTimeout(() => {
+      autoSaveMemo(selectedDateMemo, selectedDate);
+    }, 2000);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedDateMemo, selectedDate, autoSaveMemo]);
 
 
 
@@ -53,9 +177,7 @@ const MonthlyDiaryCalendar = () => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
-  const formatDateForSupabase = (date) => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  };
+
 
   const navigateMonth = (direction) => {
     setCurrentDate(prev => {
@@ -128,6 +250,19 @@ const MonthlyDiaryCalendar = () => {
         });
       });
 
+    // 특정일 스케줄 (해당 날짜만)
+    if (specificSchedules) {
+      specificSchedules
+        .filter(schedule => schedule.schedule_date === dateStr)
+        .forEach(schedule => {
+          dayTodos.push({
+            ...schedule,
+            type: 'specific_schedule',
+            category: '특정일 스케줄'
+          });
+        });
+    }
+
     return dayTodos;
   };
 
@@ -158,6 +293,13 @@ const MonthlyDiaryCalendar = () => {
         return !isCompletedToday;
       })
       .forEach(task => todos.push({ id: task.id, type: 'deadline_task' }));
+
+    // 특정일 스케줄 추가 (해당 날짜만)
+    if (specificSchedules) {
+      specificSchedules
+        .filter(schedule => schedule.schedule_date === dateStr)
+        .forEach(schedule => todos.push({ id: schedule.id, type: 'specific_schedule' }));
+    }
     
     // 완료된 할일 수 계산 (해당 날짜 기준)
     const completedCount = todos.filter(todo => 
@@ -195,6 +337,8 @@ const MonthlyDiaryCalendar = () => {
         });
         
         return { type: 'deadline', data: incompleteDeadlineTasks, icon: AlertCircle, color: 'bg-red-500' };
+      case 'schedule':
+        return { type: 'schedule', data: specificSchedules || [], icon: Clock, color: 'bg-indigo-500' };
       default:
         return { type: 'daily', data: dailyTodos, icon: Calendar, color: 'bg-gray-500' };
     }
@@ -322,13 +466,13 @@ const MonthlyDiaryCalendar = () => {
           return (
             <div 
               key={`${todo.type}-${todo.id || index}`} 
-              className={`cute-card p-2 transition-all duration-300 hover:scale-102 ${
+              className={`cute-card p-2 h-[32px] flex items-center transition-all duration-300 hover:scale-102 ${
                 isComplete ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' : 
                 todo.isOverdue ? 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200' :
                 'border-pink-100'
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -367,13 +511,15 @@ const MonthlyDiaryCalendar = () => {
                 </div>
                 
                 <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  todo.type === 'daily_todo' ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700' :
-                  todo.type === 'monthly_todo' ? 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700' :
+                  todo.type === 'daily_todo' ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700' :
+                  todo.type === 'monthly_todo' ? 'bg-gradient-to-r from-lime-100 to-green-100 text-lime-700' :
+                  todo.type === 'specific_schedule' ? 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700' :
                   todo.isOverdue ? 'bg-gradient-to-r from-red-100 to-rose-100 text-red-700' :
                   'bg-gradient-to-r from-orange-100 to-red-100 text-orange-700'
                 }`}>
-                  {todo.type === 'daily_todo' ? '💜 매일' :
-                   todo.type === 'monthly_todo' ? '💙 월간' : 
+                  {todo.type === 'daily_todo' ? '💛 매일' :
+                   todo.type === 'monthly_todo' ? '💚 월간' : 
+                   todo.type === 'specific_schedule' ? '🎯 스케줄' :
                    todo.isOverdue ? '🚨 마감' : '🧡 마감'}
                 </div>
               </div>
@@ -405,7 +551,7 @@ const MonthlyDiaryCalendar = () => {
 
     // 빈 셀 추가 (이전 달)
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-16 bg-gray-50/30"></div>);
+      days.push(<div key={`empty-${i}`} className="h-24 bg-gray-50/30"></div>);
     }
 
     // 현재 달의 날짜들
@@ -417,32 +563,75 @@ const MonthlyDiaryCalendar = () => {
                         selectedDate.getFullYear() === currentDate.getFullYear();
       const dayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      
+      // 해당 날짜의 특정일 스케줄과 마감업무 가져오기
+      const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+      const daySchedules = specificSchedules?.filter(schedule => schedule.schedule_date === dateStr) || [];
+      const dayDeadlines = deadlineTasks?.filter(task => {
+        const taskDeadline = new Date(task.deadline_date);
+        const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        return taskDeadline.toDateString() === cellDate.toDateString();
+      }) || [];
 
       days.push(
         <div
           key={day}
           onClick={() => selectDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
-          className={`calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+          className={`calendar-day min-h-[96px] cursor-pointer p-1 ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
         >
-          <div className={`date ${dayOfWeek === 0 ? 'sunday' : ''} ${dayOfWeek === 6 ? 'saturday' : ''}`}>
+          <div className={`date text-sm font-medium ${dayOfWeek === 0 ? 'sunday' : ''} ${dayOfWeek === 6 ? 'saturday' : ''}`}>
             {day}
           </div>
+          
+          {/* 특정일 스케줄 표시 */}
+          {daySchedules.length > 0 && (
+            <div className="space-y-1">
+              {daySchedules.slice(0, 2).map((schedule, index) => (
+                <div key={schedule.id} className="schedule-item specific">
+                  🎯 {schedule.text}
+                </div>
+              ))}
+              {daySchedules.length > 2 && (
+                <div className="more-items schedule">
+                  +{daySchedules.length - 2}개 더
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* 마감업무 표시 */}
+          {dayDeadlines.length > 0 && (
+            <div className="space-y-1">
+              {dayDeadlines.slice(0, 2).map((deadline, index) => (
+                <div key={deadline.id} className="schedule-item deadline">
+                  ⚠️ {deadline.text}
+                </div>
+              ))}
+              {dayDeadlines.length > 2 && (
+                <div className="more-items deadline">
+                  +{dayDeadlines.length - 2}개 더
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* 할일 상태 표시 (기존 기능 유지) */}
           {Boolean(dayInfo.totalCount > 0) && (
-            <div className="mt-1 flex items-center justify-center">
+            <div className="absolute bottom-1 right-1">
               {dayInfo.completedCount === dayInfo.totalCount ? (
                 <div className="todo-status flex items-center gap-1">
                   <span>✨</span>
-                  <span>{dayInfo.completedCount}/{dayInfo.totalCount}</span>
+                  <span className="text-xs">{dayInfo.completedCount}/{dayInfo.totalCount}</span>
                 </div>
               ) : dayInfo.completedCount > 0 ? (
                 <div className="todo-status partial flex items-center gap-1">
                   <span>🌟</span>
-                  <span>{dayInfo.completedCount}/{dayInfo.totalCount}</span>
+                  <span className="text-xs">{dayInfo.completedCount}/{dayInfo.totalCount}</span>
                 </div>
               ) : (
                 <div className="todo-status none flex items-center gap-1">
                   <span>📝</span>
-                  <span>{dayInfo.totalCount}</span>
+                  <span className="text-xs">{dayInfo.totalCount}</span>
                 </div>
               )}
             </div>
@@ -462,8 +651,8 @@ const MonthlyDiaryCalendar = () => {
       const dateStr = formatDate(selectedDate);
       
       const memoData = {
-        user_id: USER_ID,
-        memo_date: dateStr,
+            user_id: USER_ID,
+            memo_date: dateStr,
         content: selectedDateMemo,
         updated_at: new Date().toISOString()
       };
@@ -478,7 +667,7 @@ const MonthlyDiaryCalendar = () => {
         })
         .select();
 
-      if (error) throw error;
+        if (error) throw error;
       
       console.log('✅ 메모 저장 성공:', data);
       alert('메모가 성공적으로 저장되었습니다! 💾');
@@ -549,91 +738,152 @@ const MonthlyDiaryCalendar = () => {
 
         {/* 메모 섹션 */}
         <div className="border-t border-pink-100 pt-4">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">📝</span>
-            <h4 className="font-semibold text-gray-800">오늘의 메모</h4>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">📝</span>
+              <h4 className="font-semibold text-gray-800">오늘의 메모</h4>
+            </div>
+            {/* 저장 상태 표시 */}
+            <div className="flex items-center gap-2 text-sm">
+              {saveStatus === 'saving' && (
+                <div className="flex items-center gap-1 text-blue-600">
+                  <div className="animate-spin w-3 h-3 border border-blue-600 border-t-transparent rounded-full"></div>
+                  <span>저장 중...</span>
+                </div>
+              )}
+              {saveStatus === 'saved' && (
+                <div className="flex items-center gap-1 text-green-600">
+                  <span>✅</span>
+                  <span>자동 저장됨</span>
+                </div>
+              )}
+              {saveStatus === 'error' && (
+                <div className="flex items-center gap-1 text-red-600">
+                  <span>❌</span>
+                  <span>저장 실패</span>
+                </div>
+              )}
+            </div>
                   </div>
           <div className="space-y-3">
             <textarea
               value={selectedDateMemo}
               onChange={handleMemoChange}
-              placeholder="오늘 하루는 어땠나요? 💭"
+              placeholder="오늘 하루는 어땠나요? 💭 (2초 후 자동 저장됩니다)"
               className="cute-input min-h-[100px] resize-none"
             />
-          <div className="flex gap-2">
-              <button
-                onClick={saveMemo}
-                className="cute-button-primary flex-1"
-              >
-                💾 저장하기
-            </button>
-            <button 
-                onClick={deleteMemo}
-                className="cute-button-secondary"
-            >
-                🗑️ 삭제
-            </button>
-            </div>
+                              <div className="flex gap-2">
+                      <button
+                        onClick={saveMemo}
+                        disabled={isSaving}
+                        className={`cute-button-primary flex-1 ${
+                          isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {isSaving ? '💫 저장 중...' : '💾 즉시 저장'}
+                      </button>
+                      <button
+                        onClick={deleteMemo}
+                        disabled={isSaving}
+                        className={`cute-button-secondary ${
+                          isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        🗑️ 삭제
+                      </button>
+                    </div>
           </div>
         </div>
       </div>
     );
   };
 
-  // 패널 렌더링
+  // 패널 렌더링 - 모바일 최적화
   const renderPanel = () => {
     const filteredData = getFilteredData();
 
-  return (
-      <div className="space-y-6">
-        {/* 탭 버튼들 */}
-        <div className="flex flex-wrap gap-2 justify-center">
-        <button
-          onClick={() => setActiveTab('daily')}
-            className={`cute-button transition-all duration-300 ${
-            activeTab === 'daily' 
-                ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white shadow-lg' 
-                : 'cute-button-secondary'
-          }`}
-        >
-            <span className="mr-2">💜</span>
-          매일 업무
-        </button>
-        
-        <button
-          onClick={() => setActiveTab('monthly')}
-            className={`cute-button transition-all duration-300 ${
-            activeTab === 'monthly' 
-                ? 'bg-gradient-to-r from-blue-400 to-cyan-400 text-white shadow-lg' 
-                : 'cute-button-secondary'
-          }`}
-        >
-            <span className="mr-2">💙</span>
+    return (
+      <div className={`space-y-6 ${isMobile ? 'mobile-stack' : ''}`}>
+        {/* 모바일 탭 스타일 */}
+        <div className={isMobile ? 'mobile-tabs' : 'flex flex-wrap gap-2 justify-center'}>
+          <button
+            onClick={() => setActiveTab('daily')}
+            className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
+              activeTab === 'daily' 
+                ? isMobile 
+                  ? 'mobile-tab active' 
+                  : 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white shadow-lg'
+                : isMobile 
+                  ? 'mobile-tab' 
+                  : 'cute-button-secondary'
+            }`}
+          >
+            <span className="mr-2">💛</span>
+            매일 업무
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('monthly')}
+            className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
+              activeTab === 'monthly' 
+                ? isMobile 
+                  ? 'mobile-tab active' 
+                  : 'bg-gradient-to-r from-lime-400 to-green-400 text-white shadow-lg'
+                : isMobile 
+                  ? 'mobile-tab' 
+                  : 'cute-button-secondary'
+            }`}
+          >
+            <span className="mr-2">💚</span>
             월간 업무
-        </button>
-        
-        <button
-          onClick={() => setActiveTab('deadline')}
-            className={`cute-button transition-all duration-300 ${
-            activeTab === 'deadline' 
-                ? 'bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-lg' 
-                : 'cute-button-secondary'
-          }`}
-        >
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('deadline')}
+            className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
+              activeTab === 'deadline' 
+                ? isMobile 
+                  ? 'mobile-tab active' 
+                  : 'bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-lg'
+                : isMobile 
+                  ? 'mobile-tab' 
+                  : 'cute-button-secondary'
+            }`}
+          >
             <span className="mr-2">🧡</span>
             마감 업무
-        </button>
-      </div>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('schedule')}
+            className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
+              activeTab === 'schedule' 
+                ? isMobile 
+                  ? 'mobile-tab active' 
+                  : 'bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-lg'
+                : isMobile 
+                  ? 'mobile-tab' 
+                  : 'cute-button-secondary'
+            }`}
+          >
+            <span className="mr-2">🎯</span>
+            특정일 스케줄
+          </button>
+        </div>
 
-        {/* 컴포넌트 렌더링 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 컴포넌트 렌더링 - 모바일 최적화 */}
+        <div className={isMobile ? 'space-y-4' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}>
           {/* 입력 폼 */}
-          <div className="cute-card p-6">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className={`${isMobile ? 'mobile-panel' : 'cute-card p-6'}`}>
+            <h3 className={`${isMobile ? 'text-base-mobile' : 'text-lg'} font-bold mb-4 flex items-center gap-2`}>
               <span className="text-2xl">
-                {activeTab === 'daily' ? '💜' : activeTab === 'monthly' ? '💙' : '🧡'}
+                {activeTab === 'daily' ? '💛' : 
+                 activeTab === 'monthly' ? '💚' : 
+                 activeTab === 'schedule' ? '🎯' : '🧡'}
               </span>
-              새로운 {activeTab === 'daily' ? '매일' : activeTab === 'monthly' ? '월간' : '마감'} 업무
+              새로운 {activeTab === 'daily' ? '매일' : 
+                     activeTab === 'monthly' ? '월간' : 
+                     activeTab === 'schedule' ? '특정일 스케줄' : '마감'} 업무
             </h3>
             
             {activeTab === 'daily' && <DailyTodosPanel />}
@@ -641,35 +891,49 @@ const MonthlyDiaryCalendar = () => {
             {activeTab === 'monthly' && <MonthlyTodosPanel />}
             
             {activeTab === 'deadline' && <DeadlineTasksPanel />}
+            
+            {activeTab === 'schedule' && <SpecificDateSchedulePanel />}
           </div>
 
           {/* 기존 항목 목록 */}
-          <div className="cute-card p-6">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className={`${isMobile ? 'mobile-panel' : 'cute-card p-6'}`}>
+            <h3 className={`${isMobile ? 'text-base-mobile' : 'text-lg'} font-bold mb-4 flex items-center gap-2`}>
               <span className="text-2xl">📋</span>
               등록된 업무 목록
             </h3>
             
-            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            <div className={`space-y-2 ${isMobile ? 'max-h-[300px]' : 'max-h-[500px]'} overflow-y-auto`}>
               {filteredData.data?.length > 0 ? (
                 filteredData.data.map((item, index) => (
-                  <div key={item.id || index} className="cute-card p-2 border border-gray-100">
+                  <div 
+                    key={item.id || index} 
+                    className={`${isMobile ? 'mobile-todo-item' : 'cute-card p-2 border border-gray-100'}`}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm">
-                          {activeTab === 'daily' ? '💜' : activeTab === 'monthly' ? '💙' : '🧡'}
+                          {activeTab === 'daily' ? '💛' : 
+                           activeTab === 'monthly' ? '💚' : 
+                           activeTab === 'schedule' ? '🎯' : '🧡'}
                         </span>
-                        <span className="font-medium text-gray-800 text-sm">{item.text}</span>
+                        <span className={`font-medium text-gray-800 ${isMobile ? 'text-sm-mobile' : 'text-sm'}`}>
+                          {item.text}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-gray-500">
                         {activeTab === 'monthly' && (
-                          <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs">
+                          <span className={`bg-lime-100 text-lime-700 px-1.5 py-0.5 rounded-full ${isMobile ? 'text-xs-mobile' : 'text-xs'}`}>
                             매월 {item.repeat_date}일
                           </span>
                         )}
                         {activeTab === 'deadline' && (
-                          <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full text-xs">
+                          <span className={`bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full ${isMobile ? 'text-xs-mobile' : 'text-xs'}`}>
                             {item.deadline_date}
+                          </span>
+                        )}
+                        {activeTab === 'schedule' && (
+                          <span className={`bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full ${isMobile ? 'text-xs-mobile' : 'text-xs'}`}>
+                            {item.schedule_date}
                           </span>
                         )}
                       </div>
@@ -679,8 +943,8 @@ const MonthlyDiaryCalendar = () => {
               ) : (
                 <div className="text-center py-6 text-gray-500">
                   <div className="text-3xl mb-2">🌸</div>
-                  <p className="text-sm">등록된 업무가 없어요!</p>
-                  <p className="text-xs text-gray-400 mt-1">새로운 업무를 추가해보세요 ✨</p>
+                  <p className={`${isMobile ? 'text-sm-mobile' : 'text-sm'}`}>등록된 업무가 없어요!</p>
+                  <p className={`${isMobile ? 'text-xs-mobile' : 'text-xs'} text-gray-400 mt-1`}>새로운 업무를 추가해보세요 ✨</p>
                 </div>
               )}
             </div>
@@ -691,113 +955,169 @@ const MonthlyDiaryCalendar = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* 헤더 */}
-        <div className="cute-card mb-6 p-6 slide-up">
-          <div className="flex items-center justify-between">
+    <div className={`min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 ${isMobile ? 'p-2' : 'p-4'}`}>
+      <div className={`${isMobile ? 'w-full' : 'max-w-7xl mx-auto'}`}>
+        {/* 헤더 - 모바일 최적화 */}
+        <div className={`cute-card mb-6 ${isMobile ? 'p-4' : 'p-6'} slide-up`}>
+          <div className={`flex items-center ${isMobile ? 'flex-col gap-3' : 'justify-between'}`}>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center text-white text-2xl pulse-cute">
+              <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center text-white ${isMobile ? 'text-xl' : 'text-2xl'} pulse-cute`}>
                 🗓️
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                  나의 귀여운 다이어리
+                <h1 className={`${isMobile ? 'text-lg-mobile' : 'text-2xl'} font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent`}>
+                  🎀 업무 다이어리
                 </h1>
-                <p className="text-gray-600 text-sm">오늘도 화이팅! ✨</p>
+                <p className={`text-gray-600 ${isMobile ? 'text-xs-mobile' : 'text-sm'}`}>오늘도 화이팅! ✨</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowPanel(!showPanel)}
-                className="cute-button-secondary"
-              >
-                {showPanel ? '📝 패널 닫기' : '📝 할일 관리'}
-              </button>
+            <div className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}>
+              {isMobile ? (
+                // 모바일 햄버거 메뉴
+                <button
+                  onClick={() => setShowPanel(!showPanel)}
+                  className="cute-button-primary flex items-center gap-2 min-h-touch"
+                >
+                  {showPanel ? <X size={20} /> : <Menu size={20} />}
+                  <span>{showPanel ? '닫기' : '메뉴'}</span>
+                </button>
+              ) : (
+                // 데스크톱 버튼들
+                <>
+                  <button
+                    onClick={() => setShowPanel(!showPanel)}
+                    className="cute-button-secondary"
+                  >
+                    {showPanel ? '📝 패널 닫기' : '📝 할일 관리'}
+                  </button>
+                  <button
+                    onClick={() => setShowScheduleModal(true)}
+                    className="cute-button-secondary"
+                  >
+                    🎯 스케줄 관리
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* 달력 - 전체 너비 */}
-          <div className="cute-card p-6 slide-up">
-            {/* 달력 네비게이션 */}
-            <div className="flex items-center justify-between mb-6">
+        <div className={`${isMobile ? 'landscape-mobile space-y-4' : 'space-y-6'}`}>
+          {/* 달력 - 모바일 최적화 */}
+          <div 
+            className={`cute-card ${isMobile ? 'mobile-calendar-container' : 'p-6'} slide-up`}
+            ref={calendarRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* 달력 네비게이션 - 모바일 최적화 */}
+            <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
               <button
                 onClick={() => navigateMonth(-1)}
-                className="cute-button-secondary w-10 h-10 rounded-full flex items-center justify-center"
+                className={`cute-button-secondary ${isMobile ? 'w-touch h-touch' : 'w-10 h-10'} rounded-full flex items-center justify-center`}
               >
                 🌸
               </button>
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className={`${isMobile ? 'text-base-mobile' : 'text-xl'} font-bold text-gray-800`}>
                 {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월 💕
               </h2>
               <button
                 onClick={() => navigateMonth(1)}
-                className="cute-button-secondary w-10 h-10 rounded-full flex items-center justify-center"
+                className={`cute-button-secondary ${isMobile ? 'w-touch h-touch' : 'w-10 h-10'} rounded-full flex items-center justify-center`}
               >
                 🌺
               </button>
-      </div>
-
-      {/* 달력 그리드 */}
-            <div className="calendar-grid">
-        {renderCalendarDays()}
             </div>
+
+            {/* 달력 그리드 - 터치 제스처 지원 */}
+            <div className="calendar-grid">
+              {renderCalendarDays()}
+            </div>
+            
+            {/* 모바일에서만 스와이프 안내 */}
+            {isMobile && (
+              <div className="text-center mt-3 text-gray-400 text-xs-mobile">
+                <span>← 좌우 스와이프로 월 이동 →</span>
+              </div>
+            )}
           </div>
 
-          {/* 하단 고정 패널 - 오늘의 할일 & 메모 */}
+          {/* 하단 고정 패널 - 오늘의 할일 & 메모 (모바일 최적화) */}
           {Boolean(showDayDetail) && (
-            <div className="cute-card p-6 slide-up">
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-2xl">📅</span>
-                <h3 className="text-xl font-bold text-gray-800">
+            <div className={`cute-card ${isMobile ? 'mobile-panel' : 'p-6'} slide-up`}>
+              <div className={`flex items-center gap-2 ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                <span className={`${isMobile ? 'text-xl' : 'text-2xl'}`}>📅</span>
+                <h3 className={`${isMobile ? 'text-base-mobile' : 'text-xl'} font-bold text-gray-800`}>
                   {selectedDate?.toLocaleDateString('ko-KR', {
                     month: 'long',
                     day: 'numeric',
                     weekday: 'long'
                   })}
                 </h3>
-      </div>
+              </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className={`${isMobile ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-6'}`}>
                 {/* 왼쪽: 오늘의 할일 */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <span className="text-lg">✨</span>
-                    <h4 className="text-lg font-semibold text-gray-800">오늘의 할일</h4>
+                    <span className={`${isMobile ? 'text-base' : 'text-lg'}`}>✨</span>
+                    <h4 className={`${isMobile ? 'text-base-mobile' : 'text-lg'} font-semibold text-gray-800`}>오늘의 할일</h4>
                   </div>
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className={`${isMobile ? 'max-h-64' : 'max-h-96'} overflow-y-auto`}>
                     {renderTodoList()}
                   </div>
                 </div>
 
                 {/* 오른쪽: 메모 섹션 */}
                 <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-lg">📝</span>
-                    <h4 className="text-lg font-semibold text-gray-800">오늘의 메모</h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`${isMobile ? 'text-base' : 'text-lg'}`}>📝</span>
+                      <h4 className={`${isMobile ? 'text-base-mobile' : 'text-lg'} font-semibold text-gray-800`}>오늘의 메모</h4>
+                    </div>
+                    {/* 저장 상태 표시 */}
+                    <div className={`flex items-center gap-2 ${isMobile ? 'text-xs-mobile' : 'text-sm'}`}>
+                      {saveStatus === 'saving' && (
+                        <div className="flex items-center gap-1 text-blue-600">
+                          <div className="animate-spin w-3 h-3 border border-blue-600 border-t-transparent rounded-full"></div>
+                          <span>저장 중...</span>
+                        </div>
+                      )}
+                      {saveStatus === 'saved' && (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <span>✅</span>
+                          <span>자동 저장됨</span>
+                        </div>
+                      )}
+                      {saveStatus === 'error' && (
+                        <div className="flex items-center gap-1 text-red-600">
+                          <span>❌</span>
+                          <span>저장 실패</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <textarea
                       value={selectedDateMemo}
                       onChange={handleMemoChange}
-                      placeholder="오늘 하루는 어땠나요? 💭"
-                      className="cute-input min-h-[300px] resize-none"
+                      placeholder="오늘 하루는 어땠나요? 💭 (2초 후 자동 저장됩니다)"
+                      className={`cute-input ${isMobile ? 'min-h-[200px] text-base-mobile' : 'min-h-[300px]'} resize-none`}
                     />
-                    <div className="flex gap-2">
+                    <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
                       <button
                         onClick={saveMemo}
-                        className="cute-button-primary flex-1"
+                        className={`cute-button-primary ${isMobile ? 'w-full min-h-touch' : 'flex-1'}`}
                       >
                         💾 저장하기
                       </button>
                       <button
                         onClick={deleteMemo}
-                        className="cute-button-secondary"
+                        className={`cute-button-secondary ${isMobile ? 'w-full min-h-touch' : ''}`}
                       >
                         🗑️ 삭제
-      </button>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -806,16 +1126,22 @@ const MonthlyDiaryCalendar = () => {
           )}
         </div>
 
-        {/* 하단 관리 패널 */}
+        {/* 하단 관리 패널 - 모바일 최적화 */}
         {Boolean(showPanel) && (
-          <div className="mt-6 cute-card p-6 slide-up">
+          <div className={`${isMobile ? 'mt-4' : 'mt-6'} ${isMobile ? 'mobile-panel' : 'cute-card p-6'} slide-up`}>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">✨</span>
-              <h3 className="text-lg font-bold text-gray-800">할일 관리</h3>
+              <span className={`${isMobile ? 'text-xl' : 'text-2xl'}`}>✨</span>
+              <h3 className={`${isMobile ? 'text-base-mobile' : 'text-lg'} font-bold text-gray-800`}>할일 관리</h3>
             </div>
             {renderPanel()}
           </div>
         )}
+
+        {/* 스케줄 관리 모달 */}
+        <ScheduleManagementModal 
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+        />
       </div>
     </div>
   );

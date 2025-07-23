@@ -150,14 +150,31 @@ const DeadlineTasksPanel = () => {
       {loading ? (
         <div>로딩 중...</div>
       ) : (
-<<<<<<< HEAD
         <>
           {/* 미완료 마감업무 */}
           <ul className="space-y-2">
             {incompleteTasks.length > 0 ? (
               incompleteTasks.map(task => (
                 <li key={task.id} className="flex justify-between items-center border-b pb-1">
-                  <span>{task.text} <span className="text-xs text-orange-500">({task.deadline_date})</span></span>
+                  <div className="flex items-center gap-2 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleCompletion(task)}
+                      disabled={toggleLoading === task.id}
+                      className="flex-shrink-0 transition-transform hover:scale-110"
+                    >
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                        isCompleted(task)
+                          ? 'bg-gradient-to-r from-green-400 to-emerald-400 border-green-400 text-white' 
+                          : 'border-orange-300 hover:border-orange-400 bg-white'
+                      }`}>
+                        {isCompleted(task) ? '✓' : ''}
+                      </div>
+                    </button>
+                    <span className="text-gray-800">
+                      {task.text} <span className="text-xs text-orange-500">({task.deadline_date})</span>
+                    </span>
+                  </div>
                   <button className="text-red-500" onClick={() => handleDelete(task.id, task.text)}>
                     삭제
                   </button>
@@ -170,7 +187,7 @@ const DeadlineTasksPanel = () => {
 
           {/* 완료된 마감업무 */}
           <div className="mt-6">
-            <h4 className="text-base font-semibold mb-2 text-green-600">✅ 완료된 마감업무</h4>
+            <h4 className="text-base font-semibold mb-2 text-green-600"> 완료된 마감업무</h4>
             <ul className="space-y-2">
               {completedTasks.length > 0 ? (
                 completedTasks.map(task => (
@@ -187,22 +204,6 @@ const DeadlineTasksPanel = () => {
             </ul>
           </div>
         </>
-=======
-        <ul className="space-y-2">
-          {tasks.length > 0 ? (
-            tasks.map(task => (
-              <li key={task.id} className="flex justify-between items-center border-b pb-1">
-                <span>{task.text} <span className="text-xs text-orange-500">({task.deadline_date})</span></span>
-                <button className="text-red-500" onClick={() => handleDelete(task.id, task.text)}>
-                  삭제
-                </button>
-              </li>
-            ))
-          ) : (
-            <div className="text-center text-gray-400 py-4">등록된 마감 업무가 없습니다.</div>
-          )}
-        </ul>
->>>>>>> 3437008bc36646eca0d96641aa097cc8c4eb44e1
       )}
     </div>
   );

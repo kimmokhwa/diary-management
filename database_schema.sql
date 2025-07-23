@@ -30,12 +30,32 @@ CREATE TABLE deadline_tasks (
   created_at timestamp with time zone DEFAULT now()
 );
 
+-- 특정일 스케줄
+CREATE TABLE specific_schedules (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid NOT NULL,
+  text text NOT NULL,
+  schedule_date date NOT NULL,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+-- 특별 스케줄
+CREATE TABLE special_schedules (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid NOT NULL,
+  text text NOT NULL,
+  schedule_date date NOT NULL,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now()
+);
+
 -- 완료 기록
 CREATE TABLE completions (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid NOT NULL,
   item_id uuid NOT NULL,
-  item_type text CHECK (item_type IN ('daily_todo', 'monthly_todo', 'deadline_task')),
+  item_type text CHECK (item_type IN ('daily_todo', 'monthly_todo', 'deadline_task', 'specific_schedule', 'special_schedule')),
   completion_date date NOT NULL,
   created_at timestamp with time zone DEFAULT now()
 );
@@ -54,6 +74,8 @@ CREATE TABLE daily_memos (
 ALTER TABLE daily_todos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE monthly_todos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deadline_tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE specific_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE special_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE completions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_memos ENABLE ROW LEVEL SECURITY;
 
@@ -72,6 +94,14 @@ CREATE POLICY "개인용 monthly_todos 접근" ON monthly_todos
 CREATE POLICY "개인용 deadline_tasks 접근" ON deadline_tasks
   FOR ALL USING (user_id = '00000000-0000-0000-0000-000000000001'::uuid);
 
+-- specific_schedules 정책
+CREATE POLICY "개인용 specific_schedules 접근" ON specific_schedules
+  FOR ALL USING (user_id = '00000000-0000-0000-0000-000000000001'::uuid);
+
+-- special_schedules 정책
+CREATE POLICY "개인용 special_schedules 접근" ON special_schedules
+  FOR ALL USING (user_id = '00000000-0000-0000-0000-000000000001'::uuid);
+
 -- completions 정책
 CREATE POLICY "개인용 completions 접근" ON completions
   FOR ALL USING (user_id = '00000000-0000-0000-0000-000000000001'::uuid);
@@ -84,5 +114,7 @@ CREATE POLICY "개인용 daily_memos 접근" ON daily_memos
 -- DROP POLICY IF EXISTS "사용자별 daily_todos 접근" ON daily_todos;
 -- DROP POLICY IF EXISTS "사용자별 monthly_todos 접근" ON monthly_todos;
 -- DROP POLICY IF EXISTS "사용자별 deadline_tasks 접근" ON deadline_tasks;
+-- DROP POLICY IF EXISTS "사용자별 specific_schedules 접근" ON specific_schedules;
+-- DROP POLICY IF EXISTS "사용자별 special_schedules 접근" ON special_schedules;
 -- DROP POLICY IF EXISTS "사용자별 completions 접근" ON completions;
 -- DROP POLICY IF EXISTS "사용자별 daily_memos 접근" ON daily_memos; 

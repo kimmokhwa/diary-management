@@ -13,6 +13,9 @@
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
+# 날씨 API 설정 (OpenWeatherMap)
+VITE_WEATHER_API_KEY=your-openweathermap-api-key-here
+
 # MCP 설정 (선택사항)
 VITE_MCP_ENDPOINT=ws://localhost:8080/ws
 

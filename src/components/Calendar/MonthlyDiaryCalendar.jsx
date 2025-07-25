@@ -9,9 +9,12 @@ import DeadlineTasksPanel from './DeadlineTasksPanel';
 import DailyMemosPanel from './DailyMemosPanel';
 import ScheduleManagementModal from '../Modal/ScheduleManagementModal';
 import SpecialSchedulePanel from './SpecialSchedulePanel';
+<<<<<<< HEAD
 import TaxManagementPanel from './TaxManagementPanel';
 import ApprovalManagementPanel from './ApprovalManagementPanel';
 
+=======
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
 import WeatherWidget from '../common/WeatherWidget';
 import WeatherEffects from '../common/WeatherEffects';
 
@@ -42,12 +45,18 @@ const MonthlyDiaryCalendar = () => {
   const { data: completions } = useRealtime('completions');
   const { data: specificSchedules } = useRealtime('specific_schedules');
   const { data: specialSchedules, refetch: refetchSpecialSchedules } = useRealtime('special_schedules');
+<<<<<<< HEAD
   const { data: taxManagement } = useRealtime('tax_management');
   const { data: approvalManagement } = useRealtime('approval_management');
   const [localCompletions, setLocalCompletions] = useState([]);
   const [weather, setWeather] = useState(null);
 
 
+=======
+  const [localCompletions, setLocalCompletions] = useState([]);
+  const [weather, setWeather] = useState(null);
+
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
   // completions 데이터가 변경될 때 로컬 상태 업데이트
   useEffect(() => {
     if (completions) {
@@ -202,8 +211,11 @@ const MonthlyDiaryCalendar = () => {
     setWeather(weatherData);
   };
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
   // 날씨 효과 클래스 결정
   const getWeatherClass = () => {
     if (!weather) return '';
@@ -370,10 +382,13 @@ const MonthlyDiaryCalendar = () => {
         return { type: 'deadline', data: incompleteDeadlineTasks, icon: AlertCircle, color: 'bg-red-500' };
       case 'special':
         return { type: 'special', data: specialSchedules, icon: Circle, color: 'bg-purple-500' };
+<<<<<<< HEAD
       case 'tax':
         return { type: 'tax', data: taxManagement, icon: Circle, color: 'bg-blue-500' };
       case 'approval':
         return { type: 'approval', data: approvalManagement, icon: Circle, color: 'bg-green-500' };
+=======
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
       default:
         return { type: 'daily', data: dailyTodos, icon: Calendar, color: 'bg-gray-500' };
     }
@@ -886,6 +901,7 @@ const MonthlyDiaryCalendar = () => {
             <span className="mr-2">💗</span>
             특정업무
           </button>
+<<<<<<< HEAD
 
           <button
             onClick={() => setActiveTab('tax')}
@@ -918,6 +934,8 @@ const MonthlyDiaryCalendar = () => {
             <span className="mr-2">📋</span>
             결재관리
           </button>
+=======
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
           
         </div>
 
@@ -930,16 +948,24 @@ const MonthlyDiaryCalendar = () => {
                 {activeTab === 'daily' ? '💛' : 
                  activeTab === 'monthly' ? '💚' : 
                  activeTab === 'deadline' ? '🧡' : 
+<<<<<<< HEAD
                  activeTab === 'special' ? '💗' : 
                  activeTab === 'tax' ? '💰' : 
                  activeTab === 'approval' ? '📋' : ''}
+=======
+                 activeTab === 'special' ? '💗' : ''}
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
               </span>
               새로운 {activeTab === 'daily' ? '매일' : 
                      activeTab === 'monthly' ? '월간' : 
                      activeTab === 'deadline' ? '마감' : 
+<<<<<<< HEAD
                      activeTab === 'special' ? '특정' : 
                      activeTab === 'tax' ? '세금' : 
                      activeTab === 'approval' ? '결재' : ''} 업무
+=======
+                     activeTab === 'special' ? '특정' : ''} 업무
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
             </h3>
             
             {activeTab === 'daily' && <DailyTodosPanel />}
@@ -949,10 +975,13 @@ const MonthlyDiaryCalendar = () => {
             {activeTab === 'deadline' && <DeadlineTasksPanel />}
 
             {activeTab === 'special' && <SpecialSchedulePanel onChange={refetchSpecialSchedules} />}
+<<<<<<< HEAD
 
             {activeTab === 'tax' && <TaxManagementPanel />}
 
             {activeTab === 'approval' && <ApprovalManagementPanel />}
+=======
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
             
           </div>
 
@@ -976,6 +1005,7 @@ const MonthlyDiaryCalendar = () => {
                           {activeTab === 'daily' ? '💛' : 
                            activeTab === 'monthly' ? '💚' : 
                            activeTab === 'deadline' ? '🧡' : 
+<<<<<<< HEAD
                            activeTab === 'special' ? '💗' : 
                            activeTab === 'tax' ? '💰' : 
                            activeTab === 'approval' ? '📋' : ''}
@@ -984,6 +1014,12 @@ const MonthlyDiaryCalendar = () => {
                           {activeTab === 'tax' ? item.tax_type : 
                            activeTab === 'approval' ? item.client_name : 
                            item.text}
+=======
+                           activeTab === 'special' ? '💗' : ''}
+                        </span>
+                        <span className={`font-medium text-gray-800 ${isMobile ? 'text-sm-mobile' : 'text-sm'}`}>
+                          {item.text}
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -1002,6 +1038,7 @@ const MonthlyDiaryCalendar = () => {
                             특정일 {item.schedule_date}
                           </span>
                         )}
+<<<<<<< HEAD
                         {activeTab === 'tax' && (
                           <span className={`bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full ${isMobile ? 'text-xs-mobile' : 'text-xs'}`}>
                             {item.tax_amount?.toLocaleString()}원
@@ -1012,6 +1049,8 @@ const MonthlyDiaryCalendar = () => {
                             {item.transaction_amount?.toLocaleString()}원
                           </span>
                         )}
+=======
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
                       </div>
                     </div>
                   </div>
@@ -1066,6 +1105,7 @@ const MonthlyDiaryCalendar = () => {
               ) : (
                 // 데스크톱 버튼들
                 <>
+<<<<<<< HEAD
                   <div className="flex gap-2 items-center">
                     <button
                       onClick={() => setShowPanel(!showPanel)}
@@ -1074,6 +1114,14 @@ const MonthlyDiaryCalendar = () => {
                       {showPanel ? '📝 패널 닫기' : '📝 할일 관리'}
                     </button>
                   </div>
+=======
+                  <button
+                    onClick={() => setShowPanel(!showPanel)}
+                    className="cute-button-secondary"
+                  >
+                    {showPanel ? '📝 패널 닫기' : '📝 할일 관리'}
+                  </button>
+>>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
                 </>
               )}
             </div>

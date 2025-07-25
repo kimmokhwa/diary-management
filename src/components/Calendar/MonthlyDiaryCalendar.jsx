@@ -9,12 +9,8 @@ import DeadlineTasksPanel from './DeadlineTasksPanel';
 import DailyMemosPanel from './DailyMemosPanel';
 import ScheduleManagementModal from '../Modal/ScheduleManagementModal';
 import SpecialSchedulePanel from './SpecialSchedulePanel';
-<<<<<<< HEAD
 import TaxManagementPanel from './TaxManagementPanel';
 import ApprovalManagementPanel from './ApprovalManagementPanel';
-
-=======
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
 import WeatherWidget from '../common/WeatherWidget';
 import WeatherEffects from '../common/WeatherEffects';
 
@@ -29,7 +25,6 @@ const MonthlyDiaryCalendar = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(''); // 'saving', 'saved', 'error'
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  
   // 모바일 최적화 상태
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileTabs, setShowMobileTabs] = useState(false);
@@ -45,25 +40,18 @@ const MonthlyDiaryCalendar = () => {
   const { data: completions } = useRealtime('completions');
   const { data: specificSchedules } = useRealtime('specific_schedules');
   const { data: specialSchedules, refetch: refetchSpecialSchedules } = useRealtime('special_schedules');
-<<<<<<< HEAD
   const { data: taxManagement } = useRealtime('tax_management');
   const { data: approvalManagement } = useRealtime('approval_management');
   const [localCompletions, setLocalCompletions] = useState([]);
   const [weather, setWeather] = useState(null);
 
-
-=======
-  const [localCompletions, setLocalCompletions] = useState([]);
-  const [weather, setWeather] = useState(null);
-
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
   // completions 데이터가 변경될 때 로컬 상태 업데이트
   useEffect(() => {
     if (completions) {
       setLocalCompletions(completions);
     }
   }, [completions]);
-  
+
   // 모바일 감지 및 초기화
   useEffect(() => {
     const checkMobile = () => {
@@ -74,30 +62,25 @@ const MonthlyDiaryCalendar = () => {
         setShowPanel(true);
       }
     };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  
+
   // 터치 제스처 핸들러
   const minSwipeDistance = 50;
-  
   const handleTouchStart = (e) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
-  
   const handleTouchMove = (e) => {
     setTouchEnd(e.targetTouches[0].clientX);
   };
-  
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
     if (isLeftSwipe) {
       navigateMonth(1); // 다음 달
     }
@@ -122,18 +105,18 @@ const MonthlyDiaryCalendar = () => {
     try {
       setIsSaving(true);
       setSaveStatus('saving');
-      
+
       const dateStr = formatDate(date);
-      
+
       const memoData = {
         user_id: USER_ID,
         memo_date: dateStr,
         content: memo,
         updated_at: new Date().toISOString()
       };
-      
+
       console.log('🔄 메모 자동 저장 중:', memoData);
-      
+
       // UPSERT 방식으로 처리 (삽입 또는 업데이트)
       const { data, error } = await supabase
         .from('daily_memos')
@@ -143,19 +126,19 @@ const MonthlyDiaryCalendar = () => {
         .select();
 
       if (error) throw error;
-      
+
       console.log('✅ 메모 자동 저장 성공:', data);
       setSaveStatus('saved');
-      
+
       // 저장 완료 상태를 2초 후 자동으로 지움
       setTimeout(() => {
         setSaveStatus('');
       }, 2000);
-      
+
     } catch (error) {
       console.error('❌ 메모 자동 저장 중 오류:', error);
       setSaveStatus('error');
-      
+
       // 에러 상태를 3초 후 자동으로 지움
       setTimeout(() => {
         setSaveStatus('');
@@ -168,7 +151,7 @@ const MonthlyDiaryCalendar = () => {
   // Debounce 훅 구현
   useEffect(() => {
     if (!selectedDate) return;
-    
+
     // 빈 문자열이 아닌 경우에만 자동 저장
     if (selectedDateMemo.trim() === '') return;
 
@@ -211,19 +194,14 @@ const MonthlyDiaryCalendar = () => {
     setWeather(weatherData);
   };
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
   // 날씨 효과 클래스 결정
   const getWeatherClass = () => {
     if (!weather) return '';
-    
+
     console.log('🎨 메인 컴포넌트 날씨 클래스 결정:', weather.weather);
     const weatherLower = weather.weather.toLowerCase();
     console.log('🎨 소문자 변환:', weatherLower);
-    
+
     if (weatherLower.includes('rain') || weatherLower.includes('drizzle')) {
       console.log('🌧️ 비 클래스 적용');
       return 'weather-rain';
@@ -243,7 +221,7 @@ const MonthlyDiaryCalendar = () => {
   const selectDate = (date) => {
     setSelectedDate(date);
     setShowDayDetail(true);
-    
+
     const dateStr = formatDate(date);
     const memo = memos.find(memo => memo.memo_date === dateStr);
     setSelectedDateMemo(memo?.content || '');
@@ -370,25 +348,22 @@ const MonthlyDiaryCalendar = () => {
         // 완료되지 않은 마감업무만 표시
         const incompleteDeadlineTasks = deadlineTasks.filter(task => {
           // 이 마감업무에 대한 완료 기록이 있는지 확인
-          const hasAnyCompletion = localCompletions.some(completion => 
-            completion.item_id === task.id && 
+          const hasAnyCompletion = localCompletions.some(completion =>
+            completion.item_id === task.id &&
             completion.item_type === 'deadline_task'
           );
-          
+
           // 완료 기록이 없는 업무만 표시
           return !hasAnyCompletion;
         });
-        
+
         return { type: 'deadline', data: incompleteDeadlineTasks, icon: AlertCircle, color: 'bg-red-500' };
       case 'special':
         return { type: 'special', data: specialSchedules, icon: Circle, color: 'bg-purple-500' };
-<<<<<<< HEAD
       case 'tax':
         return { type: 'tax', data: taxManagement, icon: Circle, color: 'bg-blue-500' };
       case 'approval':
         return { type: 'approval', data: approvalManagement, icon: Circle, color: 'bg-green-500' };
-=======
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
       default:
         return { type: 'daily', data: dailyTodos, icon: Calendar, color: 'bg-gray-500' };
     }
@@ -396,7 +371,7 @@ const MonthlyDiaryCalendar = () => {
 
   // 할일 완료 상태 토글 (조용한 방식)
   const toggleCompletion = async (todo) => {
-    
+
           if (!todo?.id || !todo?.type) {
         console.error('❌ 잘못된 todo 데이터:', todo);
         return;
@@ -434,11 +409,11 @@ const MonthlyDiaryCalendar = () => {
           .select();
 
         if (error) throw error;
-        
+
         // 로컬 상태에서 즉시 제거
-        setLocalCompletions(prev => prev.filter(completion => 
-          !(completion.item_id === todo.id && 
-            completion.item_type === todo.type && 
+        setLocalCompletions(prev => prev.filter(completion =>
+          !(completion.item_id === todo.id &&
+            completion.item_type === todo.type &&
             completion.completion_date === selectedDateStr)
         ));
       } else {
@@ -449,7 +424,7 @@ const MonthlyDiaryCalendar = () => {
           user_id: USER_ID,
           completion_date: selectedDateStr
         };
-        
+
         const { data, error } = await supabase
           .from('completions')
           .upsert(newCompletion, {
@@ -458,7 +433,7 @@ const MonthlyDiaryCalendar = () => {
           .select();
 
         if (error) throw error;
-        
+
         // 로컬 상태에 즉시 추가
         setLocalCompletions(prev => [...prev, data[0]]);
       }
@@ -475,7 +450,7 @@ const MonthlyDiaryCalendar = () => {
   // 할일 목록 렌더링
   const renderTodoList = () => {
     const selectedDateTodos = getSelectedDateTodos(selectedDate);
-    
+
     if (!Array.isArray(selectedDateTodos) || selectedDateTodos.length === 0) {
       return (
         <div className="text-center text-gray-500 py-8">
@@ -495,12 +470,12 @@ const MonthlyDiaryCalendar = () => {
           }
 
           const isComplete = isCompleted(todo.id, todo.type, todo.deadline_date, selectedDate ? selectedDate.toISOString().split('T')[0] : null);
-          
+
           return (
-            <div 
-              key={`${todo.type}-${todo.id || index}`} 
+            <div
+              key={`${todo.type}-${todo.id || index}`}
               className={`cute-card p-2 h-[32px] flex items-center transition-all duration-300 hover:scale-102 ${
-                isComplete ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' : 
+                isComplete ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' :
                 todo.isOverdue ? 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200' :
                 'border-pink-100'
               }`}
@@ -516,14 +491,14 @@ const MonthlyDiaryCalendar = () => {
                   className="flex-shrink-0 transition-transform hover:scale-110"
                 >
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                    isComplete 
-                      ? 'bg-gradient-to-r from-green-400 to-emerald-400 border-green-400 text-white' 
+                    isComplete
+                      ? 'bg-gradient-to-r from-green-400 to-emerald-400 border-green-400 text-white'
                       : 'border-pink-300 hover:border-pink-400 bg-white'
                   }`}>
                     {isComplete ? '✓' : ''}
                   </div>
                 </button>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
                     <span className={`block transition-all duration-300 text-sm ${
@@ -537,12 +512,12 @@ const MonthlyDiaryCalendar = () => {
                     <div className={`text-xs mt-0.5 ${
                       todo.isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'
                     }`}>
-                      📅 {todo.deadline_date} 
+                      📅 {todo.deadline_date}
                       {todo.isOverdue && ' (마감일 지남)'}
                     </div>
                   )}
                 </div>
-                
+
                 <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   todo.type === 'daily_todo' ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700' :
                   todo.type === 'monthly_todo' ? 'bg-gradient-to-r from-lime-100 to-green-100 text-lime-700' :
@@ -551,7 +526,7 @@ const MonthlyDiaryCalendar = () => {
                   'bg-gradient-to-r from-orange-100 to-red-100 text-orange-700'
                 }`}>
                   {todo.type === 'daily_todo' ? '💛 매일' :
-                   todo.type === 'monthly_todo' ? '💚 월간' : 
+                   todo.type === 'monthly_todo' ? '💚 월간' :
                    todo.type === 'specific_schedule' ? '🎯 스케줄' :
                    todo.isOverdue ? '🚨 마감' : '🧡 마감'}
                 </div>
@@ -591,12 +566,12 @@ const MonthlyDiaryCalendar = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const dayInfo = getDayInfo(day);
       const isToday = new Date().toDateString() === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
-      const isSelected = selectedDate && selectedDate.getDate() === day && 
-                        selectedDate.getMonth() === currentDate.getMonth() && 
+      const isSelected = selectedDate && selectedDate.getDate() === day &&
+                        selectedDate.getMonth() === currentDate.getMonth() &&
                         selectedDate.getFullYear() === currentDate.getFullYear();
       const dayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      
+
       // 해당 날짜의 특정일 스케줄, 마감업무, 특정업무 가져오기
       const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
       const daySchedules = specificSchedules?.filter(schedule => schedule.schedule_date === dateStr) || [];
@@ -606,13 +581,13 @@ const MonthlyDiaryCalendar = () => {
         return taskDeadline.toDateString() === cellDate.toDateString();
       }) || [];
       const daySpecials = specialSchedules?.filter(s => s.schedule_date === dateStr) || [];
-      
+
       // 메모가 있는지 확인
       const hasMemo = memos?.some(memo => memo.memo_date === dateStr) || false;
-      
+
       // 해당 날짜의 모든 할일 가져오기 (완료 상태 확인용)
       const dayTodos = getSelectedDateTodos(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
-      const allCompleted = dayTodos.length > 0 && dayTodos.every(todo => 
+      const allCompleted = dayTodos.length > 0 && dayTodos.every(todo =>
         isCompleted(todo.id, todo.type, todo.deadline_date, dateStr)
       );
 
@@ -627,7 +602,7 @@ const MonthlyDiaryCalendar = () => {
             {/* 메모가 있으면 이모티콘 표시 */}
             {hasMemo && <span className="ml-1 text-lg">✨</span>}
           </div>
-          
+
           {/* 특정일 스케줄 표시 */}
           {daySchedules.length > 0 && (
             <div className="space-y-1">
@@ -643,7 +618,7 @@ const MonthlyDiaryCalendar = () => {
               )}
             </div>
           )}
-          
+
           {/* 특정업무 표시 */}
           {daySpecials.length > 0 && (
             <div className="space-y-1">
@@ -654,7 +629,7 @@ const MonthlyDiaryCalendar = () => {
               ))}
             </div>
           )}
-          
+
           {/* 마감업무 표시 */}
           {dayDeadlines.length > 0 && (
             <div className="space-y-1">
@@ -665,7 +640,7 @@ const MonthlyDiaryCalendar = () => {
               ))}
             </div>
           )}
-          
+
           {/* 할일 상태 표시 (기존 기능 유지) */}
 
         </div>
@@ -681,16 +656,16 @@ const MonthlyDiaryCalendar = () => {
 
     try {
       const dateStr = formatDate(selectedDate);
-      
+
       const memoData = {
             user_id: USER_ID,
             memo_date: dateStr,
         content: selectedDateMemo,
         updated_at: new Date().toISOString()
       };
-      
+
       console.log('📝 메모 저장 시도:', memoData);
-      
+
       // UPSERT 방식으로 처리 (삽입 또는 업데이트)
       const { data, error } = await supabase
         .from('daily_memos')
@@ -700,10 +675,10 @@ const MonthlyDiaryCalendar = () => {
         .select();
 
         if (error) throw error;
-      
+
       console.log('✅ 메모 저장 성공:', data);
       alert('메모가 성공적으로 저장되었습니다! 💾');
-      
+
     } catch (error) {
       console.error('❌ 메모 저장 중 오류:', error);
       console.error('❌ 오류 상세:', {
@@ -719,14 +694,14 @@ const MonthlyDiaryCalendar = () => {
     }
   };
 
-  // 메모 삭제 함수  
+  // 메모 삭제 함수
   const deleteMemo = async () => {
     if (!selectedDate) return;
 
     try {
       const dateStr = formatDate(selectedDate);
       const existingMemo = memos.find(memo => memo.memo_date === dateStr);
-      
+
       if (existingMemo) {
         const { error } = await supabase
           .from('daily_memos')
@@ -734,7 +709,7 @@ const MonthlyDiaryCalendar = () => {
           .eq('id', existingMemo.id);
 
         if (error) throw error;
-        
+
         setSelectedDateMemo('');
       }
     } catch (error) {
@@ -841,44 +816,44 @@ const MonthlyDiaryCalendar = () => {
           <button
             onClick={() => setActiveTab('daily')}
             className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
-              activeTab === 'daily' 
-                ? isMobile 
-                  ? 'mobile-tab active' 
+              activeTab === 'daily'
+                ? isMobile
+                  ? 'mobile-tab active'
                   : 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white shadow-lg'
-                : isMobile 
-                  ? 'mobile-tab' 
+                : isMobile
+                  ? 'mobile-tab'
                   : 'cute-button-secondary'
             }`}
           >
             <span className="mr-2">💛</span>
             매일 업무
           </button>
-          
+
           <button
             onClick={() => setActiveTab('monthly')}
             className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
-              activeTab === 'monthly' 
-                ? isMobile 
-                  ? 'mobile-tab active' 
+              activeTab === 'monthly'
+                ? isMobile
+                  ? 'mobile-tab active'
                   : 'bg-gradient-to-r from-lime-400 to-green-400 text-white shadow-lg'
-                : isMobile 
-                  ? 'mobile-tab' 
+                : isMobile
+                  ? 'mobile-tab'
                   : 'cute-button-secondary'
             }`}
           >
             <span className="mr-2">💚</span>
             월간 업무
           </button>
-          
+
           <button
             onClick={() => setActiveTab('deadline')}
             className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
-              activeTab === 'deadline' 
-                ? isMobile 
-                  ? 'mobile-tab active' 
+              activeTab === 'deadline'
+                ? isMobile
+                  ? 'mobile-tab active'
                   : 'bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-lg'
-                : isMobile 
-                  ? 'mobile-tab' 
+                : isMobile
+                  ? 'mobile-tab'
                   : 'cute-button-secondary'
             }`}
           >
@@ -889,29 +864,28 @@ const MonthlyDiaryCalendar = () => {
           <button
             onClick={() => setActiveTab('special')}
             className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
-              activeTab === 'special' 
-                ? isMobile 
-                  ? 'mobile-tab active' 
+              activeTab === 'special'
+                ? isMobile
+                  ? 'mobile-tab active'
                   : 'bg-gradient-to-r from-pink-400 to-purple-400 text-white shadow-lg'
-                : isMobile 
-                  ? 'mobile-tab' 
+                : isMobile
+                  ? 'mobile-tab'
                   : 'cute-button-secondary'
             }`}
           >
             <span className="mr-2">💗</span>
             특정업무
           </button>
-<<<<<<< HEAD
 
           <button
             onClick={() => setActiveTab('tax')}
             className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
-              activeTab === 'tax' 
-                ? isMobile 
-                  ? 'mobile-tab active' 
+              activeTab === 'tax'
+                ? isMobile
+                  ? 'mobile-tab active'
                   : 'bg-gradient-to-r from-blue-400 to-indigo-400 text-white shadow-lg'
-                : isMobile 
-                  ? 'mobile-tab' 
+                : isMobile
+                  ? 'mobile-tab'
                   : 'cute-button-secondary'
             }`}
           >
@@ -922,21 +896,19 @@ const MonthlyDiaryCalendar = () => {
           <button
             onClick={() => setActiveTab('approval')}
             className={`${isMobile ? 'mobile-tab' : 'cute-button'} transition-all duration-300 ${
-              activeTab === 'approval' 
-                ? isMobile 
-                  ? 'mobile-tab active' 
+              activeTab === 'approval'
+                ? isMobile
+                  ? 'mobile-tab active'
                   : 'bg-gradient-to-r from-emerald-400 to-teal-400 text-white shadow-lg'
-                : isMobile 
-                  ? 'mobile-tab' 
+                : isMobile
+                  ? 'mobile-tab'
                   : 'cute-button-secondary'
             }`}
           >
             <span className="mr-2">📋</span>
             결재관리
           </button>
-=======
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
-          
+
         </div>
 
         {/* 컴포넌트 렌더링 - 모바일 최적화 */}
@@ -945,44 +917,33 @@ const MonthlyDiaryCalendar = () => {
           <div className={`${isMobile ? 'mobile-panel' : 'cute-card p-6'}`}>
             <h3 className={`${isMobile ? 'text-base-mobile' : 'text-lg'} font-bold mb-4 flex items-center gap-2`}>
               <span className="text-2xl">
-                {activeTab === 'daily' ? '💛' : 
-                 activeTab === 'monthly' ? '💚' : 
-                 activeTab === 'deadline' ? '🧡' : 
-<<<<<<< HEAD
-                 activeTab === 'special' ? '💗' : 
-                 activeTab === 'tax' ? '💰' : 
+                {activeTab === 'daily' ? '💛' :
+                 activeTab === 'monthly' ? '💚' :
+                 activeTab === 'deadline' ? '🧡' :
+                 activeTab === 'special' ? '💗' :
+                 activeTab === 'tax' ? '💰' :
                  activeTab === 'approval' ? '📋' : ''}
-=======
-                 activeTab === 'special' ? '💗' : ''}
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
               </span>
-              새로운 {activeTab === 'daily' ? '매일' : 
-                     activeTab === 'monthly' ? '월간' : 
-                     activeTab === 'deadline' ? '마감' : 
-<<<<<<< HEAD
-                     activeTab === 'special' ? '특정' : 
-                     activeTab === 'tax' ? '세금' : 
+              새로운 {activeTab === 'daily' ? '매일' :
+                     activeTab === 'monthly' ? '월간' :
+                     activeTab === 'deadline' ? '마감' :
+                     activeTab === 'special' ? '특정' :
+                     activeTab === 'tax' ? '세금' :
                      activeTab === 'approval' ? '결재' : ''} 업무
-=======
-                     activeTab === 'special' ? '특정' : ''} 업무
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
             </h3>
-            
+
             {activeTab === 'daily' && <DailyTodosPanel />}
-            
+
             {activeTab === 'monthly' && <MonthlyTodosPanel />}
-            
+
             {activeTab === 'deadline' && <DeadlineTasksPanel />}
 
             {activeTab === 'special' && <SpecialSchedulePanel onChange={refetchSpecialSchedules} />}
-<<<<<<< HEAD
 
             {activeTab === 'tax' && <TaxManagementPanel />}
 
             {activeTab === 'approval' && <ApprovalManagementPanel />}
-=======
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
-            
+
           </div>
 
           {/* 기존 항목 목록 */}
@@ -991,35 +952,28 @@ const MonthlyDiaryCalendar = () => {
               <span className="text-2xl">📋</span>
               등록된 업무 목록
             </h3>
-            
+
             <div className={`space-y-2 ${isMobile ? 'max-h-[300px]' : 'max-h-[500px]'} overflow-y-auto`}>
               {filteredData.data?.length > 0 ? (
                 filteredData.data.map((item, index) => (
-                  <div 
-                    key={item.id || index} 
+                  <div
+                    key={item.id || index}
                     className={`${isMobile ? 'mobile-todo-item' : 'cute-card p-2 border border-gray-100'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm">
-                          {activeTab === 'daily' ? '💛' : 
-                           activeTab === 'monthly' ? '💚' : 
-                           activeTab === 'deadline' ? '🧡' : 
-<<<<<<< HEAD
-                           activeTab === 'special' ? '💗' : 
-                           activeTab === 'tax' ? '💰' : 
+                          {activeTab === 'daily' ? '💛' :
+                           activeTab === 'monthly' ? '💚' :
+                           activeTab === 'deadline' ? '🧡' :
+                           activeTab === 'special' ? '💗' :
+                           activeTab === 'tax' ? '💰' :
                            activeTab === 'approval' ? '📋' : ''}
                         </span>
                         <span className={`font-medium text-gray-800 ${isMobile ? 'text-sm-mobile' : 'text-sm'}`}>
-                          {activeTab === 'tax' ? item.tax_type : 
-                           activeTab === 'approval' ? item.client_name : 
+                          {activeTab === 'tax' ? item.tax_type :
+                           activeTab === 'approval' ? item.client_name :
                            item.text}
-=======
-                           activeTab === 'special' ? '💗' : ''}
-                        </span>
-                        <span className={`font-medium text-gray-800 ${isMobile ? 'text-sm-mobile' : 'text-sm'}`}>
-                          {item.text}
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -1038,7 +992,6 @@ const MonthlyDiaryCalendar = () => {
                             특정일 {item.schedule_date}
                           </span>
                         )}
-<<<<<<< HEAD
                         {activeTab === 'tax' && (
                           <span className={`bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full ${isMobile ? 'text-xs-mobile' : 'text-xs'}`}>
                             {item.tax_amount?.toLocaleString()}원
@@ -1049,8 +1002,6 @@ const MonthlyDiaryCalendar = () => {
                             {item.transaction_amount?.toLocaleString()}원
                           </span>
                         )}
-=======
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
                       </div>
                     </div>
                   </div>
@@ -1073,10 +1024,10 @@ const MonthlyDiaryCalendar = () => {
     <div className={`min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 ${isMobile ? 'p-2' : 'p-4'} ${getWeatherClass()}`}>
       {/* 날씨 효과 */}
       <WeatherEffects weather={weather} />
-      
+
       {/* 날씨 위젯 */}
       <WeatherWidget onWeatherChange={handleWeatherChange} />
-      
+
       <div className={`${isMobile ? 'w-full' : 'max-w-7xl mx-auto'}`}>
         {/* 헤더 - 모바일 최적화 */}
         <div className={`cute-card mb-6 ${isMobile ? 'p-4' : 'p-6'} slide-up`}>
@@ -1105,23 +1056,12 @@ const MonthlyDiaryCalendar = () => {
               ) : (
                 // 데스크톱 버튼들
                 <>
-<<<<<<< HEAD
-                  <div className="flex gap-2 items-center">
-                    <button
-                      onClick={() => setShowPanel(!showPanel)}
-                      className="cute-button-secondary"
-                    >
-                      {showPanel ? '📝 패널 닫기' : '📝 할일 관리'}
-                    </button>
-                  </div>
-=======
                   <button
                     onClick={() => setShowPanel(!showPanel)}
                     className="cute-button-secondary"
                   >
                     {showPanel ? '📝 패널 닫기' : '📝 할일 관리'}
                   </button>
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
                 </>
               )}
             </div>
@@ -1130,7 +1070,7 @@ const MonthlyDiaryCalendar = () => {
 
         <div className={`${isMobile ? 'landscape-mobile space-y-4' : 'space-y-6'}`}>
           {/* 달력 - 모바일 최적화 */}
-          <div 
+          <div
             className={`cute-card ${isMobile ? 'mobile-calendar-container' : 'p-6'} slide-up`}
             ref={calendarRef}
             onTouchStart={handleTouchStart}
@@ -1160,7 +1100,7 @@ const MonthlyDiaryCalendar = () => {
             <div className="calendar-grid">
               {renderCalendarDays()}
             </div>
-            
+
             {/* 모바일에서만 스와이프 안내 */}
             {isMobile && (
               <div className="text-center mt-3 text-gray-400 text-xs-mobile">
@@ -1264,7 +1204,7 @@ const MonthlyDiaryCalendar = () => {
         )}
 
         {/* 스케줄 관리 모달 */}
-        <ScheduleManagementModal 
+        <ScheduleManagementModal
           isOpen={showScheduleModal}
           onClose={() => setShowScheduleModal(false)}
         />

@@ -5,14 +5,11 @@ module.exports = {
   ],
   theme: {
     extend: {
-<<<<<<< HEAD
       // 한글 폰트 설정
       fontFamily: {
         'sans': ['Noto Sans KR', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Malgun Gothic', '맑은 고딕', 'Roboto', 'sans-serif'],
       },
       
-=======
->>>>>>> b06aa8769d4de3a64a8acbc396ca3ecfe6f58271
       // 모바일 최적화 브레이크포인트
       screens: {
         'xs': '320px',     // 작은 폰

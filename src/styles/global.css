@@ -1,0 +1,919 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* 파스텔 색상 팔레트 */
+  --pink-50: #fef7f7;
+  --pink-100: #fee2e2;
+  --pink-200: #fecaca;
+  --pink-300: #fca5a5;
+  --pink-400: #f87171;
+  --pink-500: #ef4444;
+  
+  --purple-50: #faf5ff;
+  --purple-100: #f3e8ff;
+  --purple-200: #e9d5ff;
+  --purple-300: #d8b4fe;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  
+  --yellow-50: #fefce8;
+  --yellow-100: #fef3c7;
+  --yellow-200: #fde68a;
+  --yellow-300: #fcd34d;
+  --yellow-400: #fbbf24;
+  --yellow-500: #f59e0b;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: linear-gradient(135deg, #fef7f7 0%, #f0fdf4 50%, #eff6ff 100%);
+  min-height: 100vh;
+}
+
+/* 귀여운 버튼 스타일 */
+.cute-button {
+  @apply px-4 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105 active:scale-95;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.cute-button:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.cute-button-primary {
+  @apply cute-button bg-gradient-to-r from-pink-400 to-purple-400 text-white;
+}
+
+.cute-button-secondary {
+  @apply cute-button bg-white text-gray-700 border-2 border-pink-200;
+}
+
+.cute-button-secondary:hover {
+  @apply border-pink-300 bg-pink-50;
+}
+
+/* 귀여운 카드 스타일 */
+.cute-card {
+  @apply bg-white rounded-2xl shadow-lg border border-pink-100 transition-all duration-300;
+}
+
+.cute-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 귀여운 입력 필드 */
+.cute-input {
+  @apply w-full px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-400 focus:outline-none transition-all duration-300;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.cute-input:focus {
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.1);
+}
+
+/* 귀여운 체크박스 */
+.cute-checkbox {
+  @apply w-5 h-5 rounded-lg border-2 border-pink-300 text-pink-500 focus:ring-pink-200 focus:ring-2 transition-all duration-300;
+  background: linear-gradient(135deg, #fff 0%, #fef7f7 100%);
+}
+
+.cute-checkbox:checked {
+  background: linear-gradient(135deg, #f472b6 0%, #a855f7 100%);
+  border-color: #f472b6;
+}
+
+/* 달력 스타일 - 모바일 최적화 */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  background: linear-gradient(135deg, #fef7f7 0%, #f0fdf4 100%);
+  border: 2px solid #fecaca;
+  border-radius: 1rem;
+  padding: 0.5rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 모바일에서 달력 그리드 최적화 */
+@media (min-width: 375px) {
+  .calendar-grid {
+    gap: 6px;
+    padding: 0.75rem;
+    border-radius: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .calendar-grid {
+    gap: 8px;
+    padding: 1rem;
+    border-radius: 1.5rem;
+  }
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.25rem;
+  position: relative;
+  border-radius: 0.5rem;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 96px; /* 높이 증가 - 텍스트 표시 공간 확보 */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+/* 모바일에서 달력 날짜 셀 최적화 */
+@media (min-width: 375px) {
+  .calendar-day {
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .calendar-day {
+    padding: 0.75rem;
+    border-radius: 1rem;
+  }
+}
+
+.calendar-day:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #fca5a5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-day.today {
+  background: #fef3c7 !important;
+  border-color: #f59e0b;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.calendar-day.selected {
+  background: #dcfce7 !important;
+  border-color: #22c55e;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+}
+
+.calendar-day .date {
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.calendar-day.sunday .date {
+  color: #ef4444;
+}
+
+.calendar-day.saturday .date {
+  color: #3b82f6;
+}
+
+/* 달력 셀 내부 스케줄과 마감업무 텍스트 스타일 */
+.calendar-day .schedule-item {
+  @apply px-1 py-0.5 rounded mb-1 truncate;
+  font-size: 70%;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-day .schedule-item.specific {
+  @apply bg-indigo-100 text-indigo-800;
+  border-left: 3px solid #6366f1;
+}
+
+.calendar-day .schedule-item.deadline {
+  color: #ef4444;
+  background: none;
+  border: none;
+}
+
+.calendar-day .more-items {
+  @apply text-xs font-medium text-center py-1;
+}
+
+.calendar-day .more-items.schedule {
+  @apply text-indigo-600;
+}
+
+.calendar-day .more-items.deadline {
+  @apply text-red-600;
+}
+
+/* 할일 완료 상태 표시 */
+.todo-status {
+  @apply text-xs font-bold px-2 py-1 rounded-full;
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.todo-status.partial {
+  background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.todo-status.none {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #6b7280;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
+}
+
+.calendar-day .todo-count {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  z-index: 2;
+}
+.calendar-day .todo-count .incomplete {
+  color: #ef4444; /* 빨간색 */
+}
+.calendar-day .todo-count .total {
+  color: #4ade80; /* 연두색 */
+  margin-left: 2px;
+}
+
+/* 완료된 날짜 스타일 */
+.calendar-day.all-completed {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%) !important;
+  border-color: #22c55e !important;
+}
+
+.calendar-day.all-completed .date {
+  text-decoration: line-through;
+  color: #22c55e !important;
+  font-weight: 700;
+}
+
+/* 완료된 스케줄 아이템 스타일 */
+.calendar-day .schedule-item.line-through {
+  text-decoration: line-through;
+  opacity: 0.6;
+  background: rgba(34, 197, 94, 0.1) !important;
+}
+
+/* 메모 이모티콘 애니메이션 */
+.calendar-day .date span {
+  animation: memo-bounce 2s infinite;
+}
+
+@keyframes memo-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+
+/* 애니메이션 효과 */
+.fade-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+
+.fade-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #fca5a5 0%, #c084fc 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #f87171 0%, #a855f7 100%);
+}
+
+/* 반짝이는 효과 */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.sparkle {
+  animation: sparkle 2s infinite;
+}
+
+/* 부드러운 등장 애니메이션 */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+/* 펄스 효과 */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.pulse-cute {
+  animation: pulse 2s infinite;
+}
+
+/* =========================
+   모바일 최적화 스타일
+   ========================= */
+
+/* 모바일 터치 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .cute-button {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 16px; /* iOS 확대 방지 */
+  }
+  
+  .cute-input {
+    min-height: 44px;
+    font-size: 16px; /* iOS 확대 방지 */
+  }
+  
+  /* 터치 시 확대 효과 더 크게 */
+  .cute-button:active {
+    transform: scale(0.92);
+  }
+  
+  /* 호버 효과 제거 (터치 디바이스에서) */
+  .cute-card:hover {
+    transform: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 모바일 최적화 - 작은 화면 */
+@media (max-width: 374px) {
+  .calendar-grid {
+    gap: 2px;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+  }
+  
+  .calendar-day {
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    min-height: 80px;
+  }
+  
+  .calendar-day .date {
+    font-size: 0.875rem;
+    margin-bottom: 0.125rem;
+  }
+  
+  .calendar-day .schedule-item {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+    margin-bottom: 0.125rem;
+  }
+  
+  .calendar-day .more-items {
+    font-size: 0.625rem;
+    padding: 0.125rem;
+  }
+  
+  .mobile-panel {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+  
+  .mobile-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* 일반 모바일 화면 (375px-767px) */
+@media (min-width: 375px) and (max-width: 767px) {
+  /* 모바일에서 패널 스택 레이아웃 */
+  .mobile-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  /* 모바일 달력 컨테이너 */
+  .mobile-calendar-container {
+    padding: 0.75rem;
+    margin: 0 0.5rem;
+  }
+  
+  /* 모바일 탭 스타일 */
+  .mobile-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mobile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .mobile-tab {
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  
+  .mobile-tab.active {
+    background: linear-gradient(135deg, #fecaca 0%, #e9d5ff 100%);
+    border-color: #f472b6;
+    box-shadow: 0 4px 15px rgba(244, 114, 182, 0.3);
+  }
+  
+  /* 모바일 패널 스타일 */
+  .mobile-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 1.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid #fecaca;
+  }
+  
+  /* 모바일 할일 리스트 */
+  .mobile-todo-item {
+    padding: 0.75rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #fecaca;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-todo-item:active {
+    background: rgba(252, 202, 202, 0.3);
+    transform: scale(0.98);
+  }
+}
+
+/* 중간 크기 모바일 화면 최적화 */
+@media (min-width: 375px) and (max-width: 767px) {
+  .calendar-day {
+    min-height: 88px;
+  }
+  
+  .calendar-day .schedule-item {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .calendar-day .more-items {
+    font-size: 0.75rem;
+  }
+  
+  .mobile-stack {
+    gap: 1rem;
+  }
+  
+  .mobile-calendar-container {
+    padding: 1rem;
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-tabs {
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 0.75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  
+  .mobile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .mobile-tab {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  
+  .mobile-tab.active {
+    background: linear-gradient(135deg, #f472b6 0%, #a855f7 100%);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(244, 114, 182, 0.3);
+  }
+  
+  .mobile-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-todo-item {
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(244, 114, 182, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-todo-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-todo-item:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 태블릿 화면 (768px-1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .tablet-calendar {
+    min-height: 500px;
+  }
+  
+  .tablet-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+/* 큰 화면 (1024px+) */
+@media (min-width: 1024px) {
+  .desktop-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+/* 가로 방향 모바일 (landscape) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape-mobile {
+    display: grid;
+    grid-template-columns: 1fr 250px;
+    gap: 1rem;
+    height: 100vh;
+    padding: 0.5rem;
+  }
+  
+  .calendar-grid {
+    gap: 2px;
+    padding: 0.25rem;
+  }
+  
+  .calendar-day {
+    padding: 0.125rem;
+    font-size: 11px;
+  }
+}
+
+/* PWA 앱 스타일 */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .pwa-header {
+    padding-top: calc(env(safe-area-inset-top) + 1rem);
+  }
+}
+
+/* 다크모드 지원 (시스템 설정 기반) */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1e1e2e 0%, #2d2a55 50%, #1e293b 100%);
+  }
+  
+  .cute-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(252, 202, 202, 0.3);
+  }
+  
+  .calendar-day {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+  }
+}
+
+/* 접근성 개선 - 모션 감소 설정 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .cute-button {
+    transform: none !important;
+  }
+}
+
+/* =========================
+   날씨 효과 애니메이션
+   ========================= */
+
+/* 비 효과 */
+.weather-rain {
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-rain::before {
+  content: '';
+  position: fixed;
+  top: -100vh;
+  left: 0;
+  width: 100vw;
+  height: 200vh;
+  background: linear-gradient(transparent, rgba(174, 194, 224, 0.3));
+  animation: rain-fall 1s linear infinite;
+  z-index: -1;
+}
+
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-100vh);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* 빗방울 효과 */
+.raindrop {
+  position: fixed;
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(transparent, rgba(174, 194, 224, 0.8));
+  border-radius: 0 0 50% 50%;
+  animation: raindrop-fall linear infinite;
+  z-index: -1;
+}
+
+@keyframes raindrop-fall {
+  0% {
+    transform: translateY(-100vh);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* 눈 효과 */
+.weather-snow {
+  position: relative;
+  overflow: hidden;
+}
+
+.snowflake {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  animation: snow-fall linear infinite;
+  z-index: -1;
+}
+
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 하트 효과 (맑은 날) */
+.weather-clear {
+  position: relative;
+  overflow: hidden;
+}
+
+.heart {
+  position: fixed;
+  font-size: 14px;
+  color: #ff6b9d;
+  text-shadow: 0 0 6px rgba(255, 107, 157, 0.4);
+  animation: heart-float linear infinite;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.7;
+}
+
+@keyframes heart-float {
+  0% {
+    transform: translateY(100vh) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(70vh) translateX(10px) rotate(90deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(50vh) translateX(-10px) rotate(180deg);
+    opacity: 0.8;
+  }
+  70% {
+    transform: translateY(30vh) translateX(15px) rotate(270deg);
+    opacity: 0.9;
+  }
+  90% {
+    transform: translateY(10vh) translateX(-5px) rotate(320deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20vh) translateX(-20px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 하트 크기 변형 */
+.heart.small {
+  font-size: 12px;
+  color: #ff8fab;
+}
+
+.heart.medium {
+  font-size: 16px;
+  color: #ff6b9d;
+}
+
+.heart.large {
+  font-size: 20px;
+  color: #ff4d8d;
+}
+
+/* 흐린 날씨 효과 */
+.weather-cloudy {
+  background: linear-gradient(135deg, #fef7f7 0%, #f0fdf4 50%, #eff6ff 100%) !important;
+  filter: brightness(0.9) contrast(1.1);
+}
+
+/* 날씨 정보 위젯 */
+.weather-widget {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(244, 114, 182, 0.2);
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.weather-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.weather-widget .temperature {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.weather-widget .description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.weather-widget .emoji {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+  .weather-widget {
+    top: 10px;
+    right: 10px;
+    padding: 8px 12px;
+  }
+  
+  .weather-widget .temperature {
+    font-size: 1.25rem;
+  }
+  
+  .weather-widget .emoji {
+    font-size: 1.5rem;
+  }
+} 
